@@ -37,6 +37,7 @@ services:
       APP_ENV: local
       STORAGE_BACKEND: local
       STORAGE_LOCAL_PATH: /app/storage
+      SERVER_BASE_URL: http://100.95.177.6:8000
     depends_on:
       postgres:
         condition: service_healthy
