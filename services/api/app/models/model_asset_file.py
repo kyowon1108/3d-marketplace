@@ -1,11 +1,17 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import FileRole
+
+if TYPE_CHECKING:
+    from app.models.model_asset import ModelAsset
 
 
 class ModelAssetFile(Base):
@@ -27,4 +33,4 @@ class ModelAssetFile(Base):
     )
 
     # Relationships
-    asset: Mapped["ModelAsset"] = relationship(back_populates="files")  # noqa: F821
+    asset: Mapped[ModelAsset] = relationship(back_populates="files")

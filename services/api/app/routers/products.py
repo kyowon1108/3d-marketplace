@@ -40,7 +40,7 @@ def publish_product(
         request_body=request_body_str,
     )
     if cached:
-        return ProductResponse.model_validate_json(cached.body)
+        return ProductResponse.model_validate_json(bytes(cached.body))
 
     svc = PublishService(db)
     result = svc.publish(

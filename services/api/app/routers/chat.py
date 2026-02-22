@@ -1,6 +1,7 @@
 import json
 import uuid
 from datetime import datetime
+from typing import Any
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -14,24 +15,24 @@ from app.services.chat_service import ChatService
 router = APIRouter(tags=["chat"])
 
 
-@router.get("/v1/chat-rooms", response_model=dict)
+@router.get("/v1/chat-rooms", response_model=dict[str, Any])
 def list_chat_rooms(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     svc = ChatService(db)
     rooms = svc.list_rooms(user.id)
     return {"rooms": rooms}
 
 
-@router.get("/v1/chat-rooms/{room_id}/messages", response_model=dict)
+@router.get("/v1/chat-rooms/{room_id}/messages", response_model=dict[str, Any])
 def get_chat_messages(
     room_id: uuid.UUID,
     before: datetime | None = None,
     limit: int = 50,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> dict:
+) -> dict[str, Any]:
     svc = ChatService(db)
     messages = svc.get_messages(room_id=room_id, user_id=user.id, before=before, limit=limit)
     return {"messages": messages}

@@ -58,7 +58,7 @@ def complete_upload(
         request_body=request_body_str,
     )
     if cached:
-        return UploadCompleteResponse.model_validate_json(cached.body)
+        return UploadCompleteResponse.model_validate_json(bytes(cached.body))
 
     svc = UploadService(db)
     result = svc.complete_upload(

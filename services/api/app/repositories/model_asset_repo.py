@@ -43,7 +43,7 @@ class ModelAssetRepo:
         return self.db.execute(stmt).scalar_one_or_none()
 
     def update_status(self, asset: ModelAsset, status: AssetStatus) -> ModelAsset:
-        asset.status = status  # type: ignore[assignment]
+        asset.status = status
         self.db.flush()
         return asset
 

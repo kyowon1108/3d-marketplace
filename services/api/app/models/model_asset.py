@@ -1,11 +1,19 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Float, ForeignKey, Index, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 from app.models.enums import AssetStatus, DimsSource
+
+if TYPE_CHECKING:
+    from app.models.capture_session import CaptureSession
+    from app.models.model_asset_file import ModelAssetFile
+    from app.models.user import User
 
 
 class ModelAsset(Base):
@@ -34,6 +42,6 @@ class ModelAsset(Base):
     )
 
     # Relationships
-    owner: Mapped["User"] = relationship(back_populates="model_assets")  # type: ignore[name-defined]  # noqa: F821
-    files: Mapped[list["ModelAssetFile"]] = relationship(back_populates="asset")  # noqa: F821
-    capture_session: Mapped["CaptureSession | None"] = relationship()  # type: ignore[name-defined]  # noqa: F821
+    owner: Mapped[User] = relationship(back_populates="model_assets")
+    files: Mapped[list[ModelAssetFile]] = relationship(back_populates="asset")
+    capture_session: Mapped[CaptureSession | None] = relationship()
