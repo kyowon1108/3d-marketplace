@@ -11,6 +11,14 @@ class AssetFileInfo(BaseModel):
     checksum_sha256: str
 
 
+class AssetImageInfo(BaseModel):
+    id: uuid.UUID
+    image_type: str
+    storage_key: str
+    size_bytes: int
+    sort_order: int
+
+
 class ModelAssetResponse(BaseModel):
     id: uuid.UUID
     owner_id: uuid.UUID
@@ -21,6 +29,7 @@ class ModelAssetResponse(BaseModel):
     dims_height: float | None = None
     dims_depth: float | None = None
     files: list[AssetFileInfo]
+    images: list[AssetImageInfo] = []
     created_at: datetime
     updated_at: datetime
 

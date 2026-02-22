@@ -20,6 +20,15 @@ class ProductResponse(BaseModel):
     seller_id: uuid.UUID
     published_at: datetime | None = None
     created_at: datetime
+    seller_name: str = ""
+    seller_avatar_url: str | None = None
+    thumbnail_url: str | None = None
+    status: str = "FOR_SALE"
+    likes_count: int = 0
+    views_count: int = 0
+    chat_count: int = 0
+    seller_location_name: str | None = None
+    is_liked: bool | None = None
 
 
 class ProductListResponse(BaseModel):
@@ -27,3 +36,8 @@ class ProductListResponse(BaseModel):
     total: int
     page: int
     limit: int
+
+
+class LikeToggleResponse(BaseModel):
+    liked: bool
+    likes_count: int

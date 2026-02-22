@@ -16,6 +16,8 @@ class ChatRoomResponse(BaseModel):
     subject: str
     created_at: datetime
     last_message_at: datetime | None = None
+    last_message_body: str | None = None
+    unread_count: int = 0
 
 
 class SendMessageRequest(BaseModel):

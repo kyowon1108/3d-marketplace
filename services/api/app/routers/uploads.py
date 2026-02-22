@@ -27,6 +27,7 @@ def init_upload(
     return svc.init_upload(
         owner_id=user.id,
         files=body.files,
+        images=body.images,
         dims_source=body.dims_source,
         dims_width=body.dims_width,
         dims_height=body.dims_height,
@@ -62,7 +63,7 @@ def complete_upload(
 
     svc = UploadService(db)
     result = svc.complete_upload(
-        owner_id=user.id, asset_id=body.asset_id, files=body.files
+        owner_id=user.id, asset_id=body.asset_id, files=body.files, images=body.images
     )
 
     # Store idempotency
