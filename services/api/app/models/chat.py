@@ -21,6 +21,13 @@ class ChatRoom(Base):
     last_message_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    last_message_body: Mapped[str | None] = mapped_column(Text, nullable=True)
+    buyer_last_read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    seller_last_read_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
 
     # Relationships
     messages: Mapped[list["ChatMessage"]] = relationship(back_populates="room")

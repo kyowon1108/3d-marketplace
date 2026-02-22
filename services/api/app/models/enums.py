@@ -25,3 +25,14 @@ class ArAvailability(enum.StrEnum):
     READY = "READY"
     PROCESSING = "PROCESSING"
     NONE = "NONE"
+
+
+class ImageType(enum.StrEnum):
+    THUMBNAIL = "THUMBNAIL"
+    DISPLAY = "DISPLAY"
+
+
+class ProductStatus(enum.StrEnum):
+    FOR_SALE = "FOR_SALE"
+    RESERVED = "RESERVED"
+    SOLD_OUT = "SOLD_OUT"

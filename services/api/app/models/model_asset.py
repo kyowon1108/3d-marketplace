@@ -11,6 +11,7 @@ from app.models.base import Base
 from app.models.enums import AssetStatus, DimsSource
 
 if TYPE_CHECKING:
+    from app.models.asset_image import AssetImage
     from app.models.capture_session import CaptureSession
     from app.models.model_asset_file import ModelAssetFile
     from app.models.user import User
@@ -44,4 +45,5 @@ class ModelAsset(Base):
     # Relationships
     owner: Mapped[User] = relationship(back_populates="model_assets")
     files: Mapped[list[ModelAssetFile]] = relationship(back_populates="asset")
+    images: Mapped[list[AssetImage]] = relationship(back_populates="asset")
     capture_session: Mapped[CaptureSession | None] = relationship()
