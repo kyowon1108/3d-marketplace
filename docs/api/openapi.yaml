@@ -121,6 +121,9 @@ paths:
       operationId: listProducts
       summary: List published products
       tags: [products]
+      security:
+        - bearerAuth: []
+        - {}
       parameters:
         - name: q
           in: query
@@ -136,6 +139,17 @@ paths:
           schema:
             type: integer
             default: 20
+        - name: seller_id
+          in: query
+          description: Filter products by seller UUID
+          schema:
+            type: string
+            format: uuid
+        - name: liked
+          in: query
+          description: "If true, return only products liked by the authenticated user (requires auth)"
+          schema:
+            type: boolean
       responses:
         "200":
           description: Product list
@@ -149,6 +163,9 @@ paths:
       operationId: getProduct
       summary: Get product detail
       tags: [products]
+      security:
+        - bearerAuth: []
+        - {}
       parameters:
         - name: id
           in: path
@@ -163,6 +180,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ProductResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/products/{id}/like:
+    post:
+      operationId: toggleProductLike
+      summary: Toggle like on a product
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Like toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LikeToggleResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
         "404":
           $ref: "#/components/responses/NotFound"
 
@@ -243,6 +286,34 @@ paths:
                   - rooms
         "401":
           $ref: "#/components/responses/Unauthorized"
+
+  /v1/chat-rooms/{roomId}/read:
+    post:
+      operationId: markChatRoomRead
+      summary: Mark all messages in a chat room as read
+      tags: [chat]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Room marked as read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatRoomResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /v1/chat-rooms/{roomId}/messages:
     get:
@@ -354,6 +425,71 @@ paths:
               schema:
                 $ref: "#/components/schemas/AuthTokenResponse"
 
+  /v1/auth/oauth/{provider}/token:
+    post:
+      operationId: oauthTokenExchange
+      summary: Mobile OAuth token exchange (iOS sends provider id_token)
+      tags: [auth]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GoogleTokenRequest"
+      responses:
+        "200":
+          description: Auth token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/token/refresh:
+    post:
+      operationId: refreshToken
+      summary: Refresh access token using refresh token
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TokenRefreshRequest"
+      responses:
+        "200":
+          description: New token pair
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenRefreshResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/logout:
+    post:
+      operationId: logout
+      summary: Revoke refresh token (logout)
+      tags: [auth]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LogoutRequest"
+      responses:
+        "204":
+          description: Logged out
+
   /v1/auth/me:
     get:
       operationId: getCurrentUser
@@ -388,11 +524,46 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /v1/chats/{roomId}:
+    get:
+      operationId: websocketChat
+      summary: WebSocket chat connection
+      description: |
+        Upgrades to WebSocket for real-time chat messaging.
+        Authentication via `?token=<jwt>` query parameter.
+
+        Close codes:
+        - 4001: Missing or invalid token
+        - 4003: Not a participant in this room
+
+        Inbound message format: `{"body": "message text"}`
+        Outbound message format: `{"type": "message", "id": "uuid", "room_id": "uuid", "sender_id": "uuid", "body": "text", "created_at": "iso8601"}`
+
+        Messages are persisted to the database and broadcast to all room participants.
+      tags: [chat]
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: token
+          in: query
+          required: true
+          description: JWT access token for authentication
+          schema:
+            type: string
+      responses:
+        "101":
+          description: WebSocket upgrade successful
+
 components:
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
+      bearerFormat: JWT
 
   parameters:
     IdempotencyKey:
@@ -446,6 +617,39 @@ components:
         - error
 
     # --- Upload ---
+    ImageInitMeta:
+      type: object
+      properties:
+        image_type:
+          type: string
+          enum: [THUMBNAIL, DISPLAY]
+        sort_order:
+          type: integer
+          default: 0
+        size_bytes:
+          type: integer
+      required:
+        - image_type
+        - size_bytes
+
+    ImageCompleteMeta:
+      type: object
+      properties:
+        image_type:
+          type: string
+          enum: [THUMBNAIL, DISPLAY]
+        sort_order:
+          type: integer
+        size_bytes:
+          type: integer
+        checksum_sha256:
+          type: string
+      required:
+        - image_type
+        - sort_order
+        - size_bytes
+        - checksum_sha256
+
     UploadInitRequest:
       type: object
       properties:
@@ -478,8 +682,32 @@ components:
             required:
               - role
               - size_bytes
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageInitMeta"
+          default: []
       required:
         - files
+
+    PresignedImageTarget:
+      type: object
+      properties:
+        image_type:
+          type: string
+        sort_order:
+          type: integer
+        url:
+          type: string
+          format: uri
+        expires_at:
+          type: string
+          format: date-time
+      required:
+        - image_type
+        - sort_order
+        - url
+        - expires_at
 
     UploadInitResponse:
       type: object
@@ -507,6 +735,11 @@ components:
               - role
               - url
               - expires_at
+        presigned_image_uploads:
+          type: array
+          items:
+            $ref: "#/components/schemas/PresignedImageTarget"
+          default: []
       required:
         - asset_id
         - status
@@ -534,9 +767,28 @@ components:
               - role
               - size_bytes
               - checksum_sha256
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageCompleteMeta"
+          default: []
       required:
         - asset_id
         - files
+
+    ImageVerifyResult:
+      type: object
+      properties:
+        image_type:
+          type: string
+        sort_order:
+          type: integer
+        verified:
+          type: boolean
+      required:
+        - image_type
+        - sort_order
+        - verified
 
     UploadCompleteResponse:
       type: object
@@ -559,12 +811,39 @@ components:
             required:
               - role
               - verified
+        image_results:
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageVerifyResult"
+          default: []
       required:
         - asset_id
         - status
         - files
 
     # --- Model Asset ---
+    AssetImageInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        image_type:
+          type: string
+          enum: [THUMBNAIL, DISPLAY]
+        storage_key:
+          type: string
+        size_bytes:
+          type: integer
+        sort_order:
+          type: integer
+      required:
+        - id
+        - image_type
+        - storage_key
+        - size_bytes
+        - sort_order
+
     ModelAssetResponse:
       type: object
       properties:
@@ -597,6 +876,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AssetFileInfo"
+        images:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssetImageInfo"
+          default: []
         created_at:
           type: string
           format: date-time
@@ -687,6 +971,10 @@ components:
         - title
         - price_cents
 
+    ProductStatus:
+      type: string
+      enum: [FOR_SALE, RESERVED, SOLD_OUT]
+
     ProductResponse:
       type: object
       properties:
@@ -713,6 +1001,32 @@ components:
         created_at:
           type: string
           format: date-time
+        seller_name:
+          type: string
+          default: ""
+        seller_avatar_url:
+          type: string
+          nullable: true
+        thumbnail_url:
+          type: string
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ProductStatus"
+        likes_count:
+          type: integer
+          default: 0
+        views_count:
+          type: integer
+          default: 0
+        chat_count:
+          type: integer
+          default: 0
+        seller_location_name:
+          type: string
+          nullable: true
+        is_liked:
+          type: boolean
+          nullable: true
       required:
         - id
         - asset_id
@@ -739,6 +1053,17 @@ components:
         - total
         - page
         - limit
+
+    LikeToggleResponse:
+      type: object
+      properties:
+        liked:
+          type: boolean
+        likes_count:
+          type: integer
+      required:
+        - liked
+        - likes_count
 
     # --- Chat ---
     CreateChatRoomRequest:
@@ -773,6 +1098,12 @@ components:
           type: string
           format: date-time
           nullable: true
+        last_message_body:
+          type: string
+          nullable: true
+        unread_count:
+          type: integer
+          default: 0
       required:
         - id
         - product_id
@@ -829,14 +1160,63 @@ components:
       properties:
         access_token:
           type: string
+        refresh_token:
+          type: string
+          nullable: true
         token_type:
           type: string
+        expires_in:
+          type: integer
+          nullable: true
         user:
           $ref: "#/components/schemas/UserResponse"
       required:
         - access_token
         - token_type
         - user
+
+    GoogleTokenRequest:
+      type: object
+      properties:
+        id_token:
+          type: string
+          nullable: true
+        code:
+          type: string
+          nullable: true
+
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
+
+    TokenRefreshResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+        expires_in:
+          type: integer
+      required:
+        - access_token
+        - refresh_token
+        - token_type
+        - expires_in
+
+    LogoutRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required:
+        - refresh_token
 
     UserResponse:
       type: object
@@ -850,6 +1230,16 @@ components:
           type: string
         provider:
           type: string
+        avatar_url:
+          type: string
+          nullable: true
+        trust_score:
+          type: number
+          format: float
+          default: 36.5
+        location_name:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
