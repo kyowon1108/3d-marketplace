@@ -5,7 +5,7 @@ class Settings(BaseSettings):
     app_env: str = "local"
     secret_key: str = "change-me-in-production"
 
-    database_url: str = "postgresql://marketplace:marketplace@localhost:5432/marketplace"
+    database_url: str = "postgresql://marketplace:marketplace@localhost:5433/marketplace"
 
     storage_backend: str = "local"
     storage_local_path: str = "./storage"

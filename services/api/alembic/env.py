@@ -1,9 +1,14 @@
+import sys
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 from logging.config import fileConfig
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.models.base import Base
+from app.models import Base  # noqa: E402
 
 config = context.config
 if config.config_file_name is not None:
