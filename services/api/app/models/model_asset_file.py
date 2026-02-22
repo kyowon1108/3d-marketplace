@@ -27,4 +27,4 @@ class ModelAssetFile(Base):
     )
 
     # Relationships
-    asset: Mapped["ModelAsset"] = relationship(back_populates="files")
+    asset: Mapped["ModelAsset"] = relationship(back_populates="files")  # noqa: F821

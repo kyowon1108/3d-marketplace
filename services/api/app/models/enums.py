@@ -1,7 +1,7 @@
 import enum
 
 
-class AssetStatus(str, enum.Enum):
+class AssetStatus(enum.StrEnum):
     INITIATED = "INITIATED"
     UPLOADING = "UPLOADING"
     READY = "READY"
@@ -9,19 +9,19 @@ class AssetStatus(str, enum.Enum):
     PUBLISHED = "PUBLISHED"
 
 
-class FileRole(str, enum.Enum):
+class FileRole(enum.StrEnum):
     MODEL_USDZ = "MODEL_USDZ"
     MODEL_GLB = "MODEL_GLB"
     PREVIEW_PNG = "PREVIEW_PNG"
 
 
-class DimsSource(str, enum.Enum):
+class DimsSource(enum.StrEnum):
     IOS_LIDAR = "ios_lidar"
     IOS_MANUAL = "ios_manual"
     UNKNOWN = "unknown"
 
 
-class ArAvailability(str, enum.Enum):
+class ArAvailability(enum.StrEnum):
     READY = "READY"
     PROCESSING = "PROCESSING"
     NONE = "NONE"

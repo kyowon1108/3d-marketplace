@@ -35,5 +35,5 @@ class ModelAsset(Base):
 
     # Relationships
     owner: Mapped["User"] = relationship(back_populates="model_assets")  # type: ignore[name-defined]  # noqa: F821
-    files: Mapped[list["ModelAssetFile"]] = relationship(back_populates="asset")
+    files: Mapped[list["ModelAssetFile"]] = relationship(back_populates="asset")  # noqa: F821
     capture_session: Mapped["CaptureSession | None"] = relationship()  # type: ignore[name-defined]  # noqa: F821
