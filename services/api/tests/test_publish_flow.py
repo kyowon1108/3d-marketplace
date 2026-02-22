@@ -48,6 +48,10 @@ def test_publish_success(client, auth_headers):
     assert data["title"] == "Test Product"
     assert data["price_cents"] == 9900
     assert data["asset_id"] == asset_id
+    # New fields
+    assert data["seller_name"] == "Test User"
+    assert data["likes_count"] == 0
+    assert data["views_count"] == 0
 
 
 def test_publish_non_ready_asset(client, auth_headers):

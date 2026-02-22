@@ -20,12 +20,8 @@ TestingSessionLocal = sessionmaker(bind=engine, autocommit=False, autoflush=Fals
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database() -> Generator[None, None, None]:
-    # Use existing Alembic-managed schema if tables exist; otherwise create all.
-    from sqlalchemy import inspect
-
-    inspector = inspect(engine)
-    if "users" not in inspector.get_table_names():
-        Base.metadata.create_all(bind=engine)
+    # Create any tables missing from the DB (idempotent for existing tables).
+    Base.metadata.create_all(bind=engine)
     yield
     # Don't drop tables — preserve Alembic-managed schema
 

@@ -11,12 +11,17 @@ def test_dev_login(client):
     assert data["token_type"] == "bearer"
     assert data["user"]["email"] == "test@example.com"
     assert data["access_token"]  # non-empty
+    assert "avatar_url" in data["user"]
+    assert data["user"]["location_name"] is None
 
 
 def test_get_me(client, auth_headers):
     resp = client.get("/v1/auth/me", headers=auth_headers)
     assert resp.status_code == 200
-    assert resp.json()["email"] == "test@example.com"
+    data = resp.json()
+    assert data["email"] == "test@example.com"
+    assert "avatar_url" in data
+    assert data["location_name"] is None
 
 
 def test_get_me_unauthorized(client):

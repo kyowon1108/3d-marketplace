@@ -44,6 +44,35 @@ def test_list_products(client, auth_headers):
     data = resp.json()
     assert data["total"] == 2
     assert len(data["products"]) == 2
+    # New fields present with defaults
+    p = data["products"][0]
+    assert "seller_name" in p
+    assert "likes_count" in p
+    assert "views_count" in p
+    assert p["likes_count"] == 0
+    assert p["views_count"] == 0
+    assert p["status"] == "FOR_SALE"
+    assert p["chat_count"] == 0
+    assert "seller_location_name" in p
+
+
+def test_list_products_with_seller_name(client, auth_headers):
+    _publish_product(client, auth_headers, "Product C", 3000)
+
+    resp = client.get("/v1/products")
+    assert resp.status_code == 200
+    p = resp.json()["products"][0]
+    assert p["seller_name"] == "Test User"
+
+
+def test_list_products_no_auth(client, auth_headers):
+    _publish_product(client, auth_headers, "Product D", 4000)
+
+    # No auth header
+    resp = client.get("/v1/products")
+    assert resp.status_code == 200
+    p = resp.json()["products"][0]
+    assert p["is_liked"] is None
 
 
 def test_get_product(client, auth_headers):
@@ -51,7 +80,14 @@ def test_get_product(client, auth_headers):
 
     resp = client.get(f"/v1/products/{product['id']}")
     assert resp.status_code == 200
-    assert resp.json()["title"] == "Detail Test"
+    data = resp.json()
+    assert data["title"] == "Detail Test"
+    assert data["seller_name"] == "Test User"
+    assert "likes_count" in data
+    assert "views_count" in data
+    assert data["status"] == "FOR_SALE"
+    assert data["chat_count"] == 0
+    assert "seller_location_name" in data
 
 
 def test_get_product_404(client):
