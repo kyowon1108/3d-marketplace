@@ -1,0 +1,875 @@
+openapi: "3.1.0"
+info:
+  title: 3D Marketplace API
+  version: "0.1.0"
+  description: AR-powered 3D product marketplace API
+
+servers:
+  - url: http://localhost:8000
+    description: Local development
+
+paths:
+  /v1/model-assets/uploads/init:
+    post:
+      operationId: initUpload
+      summary: Initialize presigned upload targets
+      tags: [uploads]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadInitRequest"
+      responses:
+        "200":
+          description: Presigned URLs issued
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadInitResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/model-assets/uploads/complete:
+    post:
+      operationId: completeUpload
+      summary: Verify uploaded files and transition to READY
+      tags: [uploads]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UploadCompleteRequest"
+      responses:
+        "200":
+          description: Upload verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadCompleteResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/model-assets/{assetId}:
+    get:
+      operationId: getModelAsset
+      summary: Get model asset status
+      tags: [model-assets]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: assetId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ModelAssetResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/products/publish:
+    post:
+      operationId: publishProduct
+      summary: Publish a READY asset as a product
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishRequest"
+      responses:
+        "201":
+          description: Product published
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /v1/products:
+    get:
+      operationId: listProducts
+      summary: List published products
+      tags: [products]
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Product list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductListResponse"
+
+  /v1/products/{id}:
+    get:
+      operationId: getProduct
+      summary: Get product detail
+      tags: [products]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/products/{id}/ar-asset:
+    get:
+      operationId: getProductArAsset
+      summary: Get AR asset for a product
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: AR asset info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArAssetResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/products/{id}/chat-rooms:
+    post:
+      operationId: createProductChatRoom
+      summary: Create a chat room for a product
+      tags: [chat]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateChatRoomRequest"
+      responses:
+        "201":
+          description: Chat room created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatRoomResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/chat-rooms:
+    get:
+      operationId: listChatRooms
+      summary: List user's chat rooms
+      tags: [chat]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Chat room list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  rooms:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatRoomResponse"
+                required:
+                  - rooms
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/chat-rooms/{roomId}/messages:
+    get:
+      operationId: getChatMessages
+      summary: Get messages in a chat room
+      tags: [chat]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: before
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+      responses:
+        "200":
+          description: Message list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  messages:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ChatMessageResponse"
+                required:
+                  - messages
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+    post:
+      operationId: sendChatMessage
+      summary: Send a message in a chat room
+      tags: [chat]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "201":
+          description: Message sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatMessageResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/auth/providers:
+    get:
+      operationId: getAuthProviders
+      summary: List available auth providers
+      tags: [auth]
+      responses:
+        "200":
+          description: Provider list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthProvidersResponse"
+
+  /v1/auth/oauth/{provider}/callback:
+    get:
+      operationId: oauthCallback
+      summary: OAuth callback handler
+      tags: [auth]
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: state
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Auth token
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthTokenResponse"
+
+  /v1/auth/me:
+    get:
+      operationId: getCurrentUser
+      summary: Get current authenticated user
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/summary:
+    get:
+      operationId: getUserSummary
+      summary: Get user summary stats
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: User summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummaryResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema:
+        type: string
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Forbidden:
+      description: Forbidden
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+    Conflict:
+      description: Conflict
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        detail:
+          type: string
+      required:
+        - error
+
+    # --- Upload ---
+    UploadInitRequest:
+      type: object
+      properties:
+        dims_source:
+          type: string
+          enum: [ios_lidar, ios_manual, unknown]
+        dims_width:
+          type: number
+          nullable: true
+        dims_height:
+          type: number
+          nullable: true
+        dims_depth:
+          type: number
+          nullable: true
+        capture_session_id:
+          type: string
+          format: uuid
+          nullable: true
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [MODEL_USDZ, MODEL_GLB, PREVIEW_PNG]
+              size_bytes:
+                type: integer
+            required:
+              - role
+              - size_bytes
+      required:
+        - files
+
+    UploadInitResponse:
+      type: object
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [UPLOADING]
+        presigned_uploads:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              url:
+                type: string
+                format: uri
+              expires_at:
+                type: string
+                format: date-time
+            required:
+              - role
+              - url
+              - expires_at
+      required:
+        - asset_id
+        - status
+        - presigned_uploads
+
+    UploadCompleteRequest:
+      type: object
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+                enum: [MODEL_USDZ, MODEL_GLB, PREVIEW_PNG]
+              size_bytes:
+                type: integer
+              checksum_sha256:
+                type: string
+            required:
+              - role
+              - size_bytes
+              - checksum_sha256
+      required:
+        - asset_id
+        - files
+
+    UploadCompleteResponse:
+      type: object
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [READY]
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              verified:
+                type: boolean
+            required:
+              - role
+              - verified
+      required:
+        - asset_id
+        - status
+        - files
+
+    # --- Model Asset ---
+    ModelAssetResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        owner_id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [INITIATED, UPLOADING, READY, FAILED, PUBLISHED]
+        availability:
+          type: string
+          enum: [READY, PROCESSING, NONE]
+        dims_source:
+          type: string
+          enum: [ios_lidar, ios_manual, unknown]
+          nullable: true
+        dims_width:
+          type: number
+          nullable: true
+        dims_height:
+          type: number
+          nullable: true
+        dims_depth:
+          type: number
+          nullable: true
+        files:
+          type: array
+          items:
+            $ref: "#/components/schemas/AssetFileInfo"
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - owner_id
+        - status
+        - availability
+        - files
+        - created_at
+        - updated_at
+
+    AssetFileInfo:
+      type: object
+      properties:
+        role:
+          type: string
+        storage_key:
+          type: string
+        size_bytes:
+          type: integer
+        checksum_sha256:
+          type: string
+      required:
+        - role
+        - storage_key
+        - size_bytes
+        - checksum_sha256
+
+    # --- AR Asset ---
+    ArAssetResponse:
+      type: object
+      properties:
+        availability:
+          type: string
+          enum: [READY, PROCESSING, NONE]
+        asset_id:
+          type: string
+          format: uuid
+          nullable: true
+        files:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              url:
+                type: string
+                format: uri
+              type:
+                type: string
+                enum: [model, preview]
+            required:
+              - role
+              - url
+              - type
+        dims_source:
+          type: string
+          enum: [ios_lidar, ios_manual, unknown]
+          nullable: true
+        dims_trust:
+          type: string
+          enum: [high, medium, low]
+          nullable: true
+      required:
+        - availability
+        - files
+
+    # --- Product ---
+    PublishRequest:
+      type: object
+      properties:
+        asset_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        price_cents:
+          type: integer
+      required:
+        - asset_id
+        - title
+        - price_cents
+
+    ProductResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        asset_id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price_cents:
+          type: integer
+        seller_id:
+          type: string
+          format: uuid
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - asset_id
+        - title
+        - price_cents
+        - seller_id
+        - created_at
+
+    ProductListResponse:
+      type: object
+      properties:
+        products:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductResponse"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - products
+        - total
+        - page
+        - limit
+
+    # --- Chat ---
+    CreateChatRoomRequest:
+      type: object
+      properties:
+        subject:
+          type: string
+      required:
+        - subject
+
+    ChatRoomResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        buyer_id:
+          type: string
+          format: uuid
+        seller_id:
+          type: string
+          format: uuid
+        subject:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        last_message_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+        - id
+        - product_id
+        - buyer_id
+        - seller_id
+        - subject
+        - created_at
+
+    ChatMessageResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        room_id:
+          type: string
+          format: uuid
+        sender_id:
+          type: string
+          format: uuid
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - room_id
+        - sender_id
+        - body
+        - created_at
+
+    SendMessageRequest:
+      type: object
+      properties:
+        body:
+          type: string
+      required:
+        - body
+
+    # --- Auth ---
+    AuthProvidersResponse:
+      type: object
+      properties:
+        providers:
+          type: array
+          items:
+            type: string
+      required:
+        - providers
+
+    AuthTokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        token_type:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserResponse"
+      required:
+        - access_token
+        - token_type
+        - user
+
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+        name:
+          type: string
+        provider:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - name
+        - provider
+        - created_at
+
+    UserSummaryResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/UserResponse"
+        product_count:
+          type: integer
+        unread_messages:
+          type: integer
+      required:
+        - user
+        - product_count
+        - unread_messages
