@@ -1,0 +1,30 @@
+name: Marketplace
+options:
+  bundleIdPrefix: com.marketplace
+  deploymentTarget:
+    iOS: "17.0"
+  xcodeVersion: "16.0"
+  generateEmptyDirectories: true
+
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+
+targets:
+  Marketplace:
+    type: application
+    platform: iOS
+    sources:
+      - path: App
+      - path: DesignSystem
+      - path: Features
+      - path: Modules
+    resources:
+      - path: Resources/Assets.xcassets
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: kapr.marketplace.app
+        PRODUCT_NAME: Marketplace
+        DEVELOPMENT_TEAM: "kyowon lee"
+        INFOPLIST_FILE: Info.plist
+        SWIFT_STRICT_CONCURRENCY: minimal
