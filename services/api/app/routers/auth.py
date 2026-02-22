@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -7,6 +7,10 @@ from app.models.user import User
 from app.schemas.auth import (
     AuthProvidersResponse,
     AuthTokenResponse,
+    GoogleTokenRequest,
+    LogoutRequest,
+    TokenRefreshRequest,
+    TokenRefreshResponse,
     UserResponse,
     UserSummaryResponse,
 )
@@ -24,21 +28,62 @@ def get_auth_providers(db: Session = Depends(get_db)) -> AuthProvidersResponse:
 @router.get("/v1/auth/oauth/{provider}/callback", response_model=AuthTokenResponse)
 def oauth_callback(
     provider: str,
+    request: Request,
     code: str = Query(...),
     state: str | None = None,
     db: Session = Depends(get_db),
 ) -> AuthTokenResponse:
-    if provider != "dev":
+    svc = AuthService(db)
+
+    if provider == "dev":
+        parts = code.split(":", 1)
+        if len(parts) != 2:
+            raise HTTPException(status_code=400, detail="Dev code must be email:name")
+        email, name = parts
+        return svc.dev_login(email=email, name=name)
+
+    if provider == "google":
+        # Web flow: exchange auth code for tokens
+        redirect_uri = str(request.url_for("oauth_callback", provider="google"))
+        return svc.google_login_with_code(code=code, redirect_uri=redirect_uri)
+
+    raise HTTPException(status_code=400, detail=f"Unsupported provider: {provider}")
+
+
+@router.post("/v1/auth/oauth/{provider}/token", response_model=AuthTokenResponse)
+def oauth_token_exchange(
+    provider: str,
+    body: GoogleTokenRequest,
+    db: Session = Depends(get_db),
+) -> AuthTokenResponse:
+    """Mobile token exchange: iOS sends a Google id_token directly."""
+    if provider != "google":
         raise HTTPException(status_code=400, detail=f"Unsupported provider: {provider}")
 
-    # Dev mode: code is "email:name" format
-    parts = code.split(":", 1)
-    if len(parts) != 2:
-        raise HTTPException(status_code=400, detail="Dev code must be email:name")
+    if not body.id_token:
+        raise HTTPException(status_code=400, detail="id_token is required for mobile flow")
 
-    email, name = parts
     svc = AuthService(db)
-    return svc.dev_login(email=email, name=name)
+    return svc.google_login_with_id_token(body.id_token)
+
+
+@router.post("/v1/auth/token/refresh", response_model=TokenRefreshResponse)
+def refresh_token(
+    body: TokenRefreshRequest,
+    db: Session = Depends(get_db),
+) -> TokenRefreshResponse:
+    svc = AuthService(db)
+    return svc.refresh_tokens(body.refresh_token)
+
+
+@router.post("/v1/auth/logout", status_code=204)
+def logout(
+    body: LogoutRequest,
+    db: Session = Depends(get_db),
+) -> Response:
+    svc = AuthService(db)
+    svc.logout(body.refresh_token)
+    return Response(status_code=204)
 
 
 @router.get("/v1/auth/me", response_model=UserResponse)

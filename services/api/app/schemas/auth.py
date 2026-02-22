@@ -10,8 +10,30 @@ class AuthProvidersResponse(BaseModel):
 
 class AuthTokenResponse(BaseModel):
     access_token: str
+    refresh_token: str | None = None
     token_type: str = "bearer"
+    expires_in: int | None = None
     user: "UserResponse"
+
+
+class TokenRefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class TokenRefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str = "bearer"
+    expires_in: int
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+
+class GoogleTokenRequest(BaseModel):
+    id_token: str | None = None
+    code: str | None = None
 
 
 class UserResponse(BaseModel):
@@ -19,6 +41,8 @@ class UserResponse(BaseModel):
     email: str
     name: str
     provider: str
+    avatar_url: str | None = None
+    location_name: str | None = None
     created_at: datetime
 
 
