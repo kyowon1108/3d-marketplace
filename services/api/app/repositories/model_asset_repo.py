@@ -37,7 +37,7 @@ class ModelAssetRepo:
     def get_by_id(self, asset_id: uuid.UUID) -> ModelAsset | None:
         stmt = (
             select(ModelAsset)
-            .options(selectinload(ModelAsset.files))
+            .options(selectinload(ModelAsset.files), selectinload(ModelAsset.images))
             .where(ModelAsset.id == asset_id)
         )
         return self.db.execute(stmt).scalar_one_or_none()

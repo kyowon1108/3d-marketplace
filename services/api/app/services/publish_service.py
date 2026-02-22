@@ -4,9 +4,12 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.enums import AssetStatus
+from app.repositories.asset_image_repo import AssetImageRepo
 from app.repositories.model_asset_repo import ModelAssetRepo
 from app.repositories.product_repo import ProductRepo
+from app.repositories.user_repo import UserRepo
 from app.schemas.product import ProductResponse
+from app.services.storage_service import StorageService
 
 
 class PublishService:
@@ -14,6 +17,9 @@ class PublishService:
         self.db = db
         self.asset_repo = ModelAssetRepo(db)
         self.product_repo = ProductRepo(db)
+        self.user_repo = UserRepo(db)
+        self.image_repo = AssetImageRepo(db)
+        self.storage = StorageService()
 
     def publish(
         self,
@@ -49,6 +55,19 @@ class PublishService:
         self.asset_repo.update_status(asset, AssetStatus.PUBLISHED)
         self.db.commit()
 
+        # Resolve seller info
+        seller = self.user_repo.get_by_id(owner_id)
+        seller_name = seller.name if seller else ""
+        seller_avatar_url = seller.avatar_url if seller else None
+
+        # Resolve thumbnail
+        thumbnail = self.image_repo.get_thumbnail(asset_id)
+        thumbnail_url = (
+            self.storage.get_download_url(thumbnail.storage_key) if thumbnail else None
+        )
+
+        seller_location_name = seller.location_name if seller else None
+
         return ProductResponse(
             id=product.id,
             asset_id=product.asset_id,
@@ -58,4 +77,12 @@ class PublishService:
             seller_id=product.seller_id,
             published_at=product.published_at,
             created_at=product.created_at,
+            seller_name=seller_name,
+            seller_avatar_url=seller_avatar_url,
+            thumbnail_url=thumbnail_url,
+            status=product.status,
+            likes_count=0,
+            views_count=0,
+            chat_count=0,
+            seller_location_name=seller_location_name,
         )

@@ -22,14 +22,19 @@ class StorageService:
         ext = ext_map.get(role, "bin")
         return f"assets/{asset_id}/{role.lower()}.{ext}"
 
+    def generate_image_storage_key(
+        self, asset_id: uuid.UUID, image_type: str, sort_order: int
+    ) -> str:
+        return f"assets/{asset_id}/{image_type.lower()}_{sort_order}.png"
+
     def generate_presigned_url(self, storage_key: str) -> tuple[str, datetime]:
-        """For local dev, return a file:// URL. Production would use S3 presigned URL."""
-        url = f"http://localhost:8000/storage/{storage_key}"
+        """For local dev, return a URL to the storage endpoint. Production would use S3 presigned URL."""
+        url = f"{settings.server_base_url}/storage/{storage_key}"
         expires_at = datetime.now(UTC) + timedelta(hours=1)
         return url, expires_at
 
     def get_download_url(self, storage_key: str) -> str:
-        return f"http://localhost:8000/storage/{storage_key}"
+        return f"{settings.server_base_url}/storage/{storage_key}"
 
     def verify_object(
         self, storage_key: str, expected_size: int, expected_checksum: str

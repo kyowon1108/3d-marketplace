@@ -4,6 +4,7 @@ from datetime import datetime
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
+from app.models.chat import ChatRoom
 from app.repositories.chat_repo import ChatRepo
 from app.repositories.product_repo import ProductRepo
 from app.schemas.chat import ChatMessageResponse, ChatRoomResponse
@@ -14,6 +15,22 @@ class ChatService:
         self.db = db
         self.chat_repo = ChatRepo(db)
         self.product_repo = ProductRepo(db)
+
+    def _build_room_response(
+        self, room: ChatRoom, user_id: uuid.UUID,
+    ) -> ChatRoomResponse:
+        unread = self.chat_repo.count_unread_for_room(room, user_id)
+        return ChatRoomResponse(
+            id=room.id,
+            product_id=room.product_id,
+            buyer_id=room.buyer_id,
+            seller_id=room.seller_id,
+            subject=room.subject,
+            created_at=room.created_at,
+            last_message_at=room.last_message_at,
+            last_message_body=room.last_message_body,
+            unread_count=unread,
+        )
 
     def create_room(
         self,
@@ -33,30 +50,24 @@ class ChatService:
         )
         self.db.commit()
 
-        return ChatRoomResponse(
-            id=room.id,
-            product_id=room.product_id,
-            buyer_id=room.buyer_id,
-            seller_id=room.seller_id,
-            subject=room.subject,
-            created_at=room.created_at,
-            last_message_at=room.last_message_at,
-        )
+        return self._build_room_response(room, buyer_id)
 
     def list_rooms(self, user_id: uuid.UUID) -> list[ChatRoomResponse]:
         rooms = self.chat_repo.list_rooms(user_id)
-        return [
-            ChatRoomResponse(
-                id=r.id,
-                product_id=r.product_id,
-                buyer_id=r.buyer_id,
-                seller_id=r.seller_id,
-                subject=r.subject,
-                created_at=r.created_at,
-                last_message_at=r.last_message_at,
-            )
-            for r in rooms
-        ]
+        return [self._build_room_response(r, user_id) for r in rooms]
+
+    def mark_read(self, room_id: uuid.UUID, user_id: uuid.UUID) -> ChatRoomResponse:
+        room = self.chat_repo.get_room(room_id)
+        if not room:
+            raise HTTPException(status_code=404, detail="Chat room not found")
+        if room.buyer_id != user_id and room.seller_id != user_id:
+            raise HTTPException(status_code=403, detail="Not a participant")
+
+        self.chat_repo.mark_read(room_id, user_id)
+        self.db.commit()
+        self.db.refresh(room)
+
+        return self._build_room_response(room, user_id)
 
     def get_messages(
         self,
