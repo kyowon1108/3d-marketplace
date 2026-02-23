@@ -46,3 +46,6 @@ class ArAssetResponse(BaseModel):
     files: list[ArAssetFileInfo]
     dims_source: str | None = None
     dims_trust: str | None = None
+    dims_width: float | None = None
+    dims_height: float | None = None
+    dims_depth: float | None = None

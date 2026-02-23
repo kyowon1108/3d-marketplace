@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1C998C40F54C4D0A89D50001 /* ProfileEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50011 /* ProfileEditView.swift */; };
+		1C998C40F54C4D0A89D50002 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50012 /* SettingsView.swift */; };
+		1C998C40F54C4D0A89D50003 /* ProductEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50013 /* ProductEditView.swift */; };
 		02B017F527F3765CF0DFA45B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F17F615814C8D98DBF52AB /* ContentView.swift */; };
 		04651163E6E0D46DDCF11E49 /* NativeCaptureViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5660E2400C8234E22F928B /* NativeCaptureViewMock.swift */; };
 		05B78FDE3DAD93D6A8CFB644 /* MarketplaceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF31F3AF4B70FA032BC7B92 /* MarketplaceApp.swift */; };
@@ -53,6 +56,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1C998C40F54C4D0A89D50011 /* ProfileEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileEditView.swift; sourceTree = "<group>"; };
+		1C998C40F54C4D0A89D50012 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		1C998C40F54C4D0A89D50013 /* ProductEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductEditView.swift; sourceTree = "<group>"; };
 		1674E08F0D0892DEEB92E6FB /* ARPlacementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARPlacementView.swift; sourceTree = "<group>"; };
 		1DC8DC5A32FD08C386BA06D6 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		23C985F3A6FB1E7F1EE58A20 /* ProcessingGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingGateView.swift; sourceTree = "<group>"; };
@@ -236,6 +242,8 @@
 			isa = PBXGroup;
 			children = (
 				A9EE5AF88267ABB276C22FF4 /* ProfileView.swift */,
+				1C998C40F54C4D0A89D50011 /* ProfileEditView.swift */,
+				1C998C40F54C4D0A89D50012 /* SettingsView.swift */,
 			);
 			path = Profile;
 			sourceTree = "<group>";
@@ -305,6 +313,7 @@
 			children = (
 				EE1475378E78534DB95D36C6 /* ARQuickLookView.swift */,
 				52A38C44FBBA5A41D6348E93 /* ProductDetailView.swift */,
+				1C998C40F54C4D0A89D50013 /* ProductEditView.swift */,
 			);
 			path = ProductDetail;
 			sourceTree = "<group>";
@@ -370,7 +379,7 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1600;
+				LastUpgradeCheck = 2620;
 			};
 			buildConfigurationList = FAE48457D13F738935C87466 /* Build configuration list for PBXProject "Marketplace" */;
 			compatibilityVersion = "Xcode 14.0";
@@ -436,10 +445,13 @@
 				F2876822F466B0B99216E2EF /* PrimaryButton.swift in Sources */,
 				67B3760F3285FED90667CEAD /* ProcessingGateView.swift in Sources */,
 				FEC1F2B7215D11E86DD8B763 /* ProductDetailView.swift in Sources */,
+				1C998C40F54C4D0A89D50003 /* ProductEditView.swift in Sources */,
 				8E0D3AE98367444459AF7CB2 /* ProductListView.swift in Sources */,
 				FCE723F000C047D88BDA383C /* ProfileView.swift in Sources */,
+				1C998C40F54C4D0A89D50001 /* ProfileEditView.swift in Sources */,
 				5A7ED6FC4F869A9CE5D27974 /* SearchView.swift in Sources */,
 				0C4264E385A56F0CFEF02B96 /* SellNewView.swift in Sources */,
+				1C998C40F54C4D0A89D50002 /* SettingsView.swift in Sources */,
 				2A49486C121A9EC630BDD053 /* SellNewViewModel.swift in Sources */,
 				E02D927DA9F04E573F5BAC40 /* ShimmerModifier.swift in Sources */,
 				3540986A19A0EC4D94323EC6 /* SweepCaptureEngine.swift in Sources */,

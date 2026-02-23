@@ -91,6 +91,27 @@ struct SellNewView: View {
                                         .foregroundColor(Theme.Colors.violetAccent)
                                         .accessibilityLabel("3D 모델 다시 스캔")
                                     }
+
+                                    // Auto-measured dimensions
+                                    if let dims = viewModel.extractedDimensions {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "ruler")
+                                                    .font(.system(size: 12))
+                                                    .foregroundColor(Theme.Colors.violetAccent)
+                                                Text("자동 측정 치수")
+                                                    .font(.caption.weight(.semibold))
+                                                    .foregroundColor(Theme.Colors.textSecondary)
+                                            }
+                                            Text(dims.formattedCm)
+                                                .font(.system(size: 16, weight: .bold, design: .monospaced))
+                                                .foregroundColor(Theme.Colors.textPrimary)
+                                        }
+                                        .padding(10)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .background(Theme.Colors.violetAccent.opacity(0.08))
+                                        .cornerRadius(8)
+                                    }
                                 }
                                 .padding()
                                 .background(Theme.Colors.bgSecondary)
@@ -135,9 +156,43 @@ struct SellNewView: View {
                             }
                         }
                         
+                        // AI Suggest Button (visible after upload)
+                        if viewModel.uploadedAssetId != nil {
+                            Button(action: {
+                                viewModel.requestAISuggestion()
+                            }) {
+                                HStack(spacing: 8) {
+                                    if viewModel.isLoadingAISuggestion {
+                                        ProgressView()
+                                            .tint(.white)
+                                            .scaleEffect(0.8)
+                                    } else {
+                                        Image(systemName: "wand.and.stars")
+                                            .font(.system(size: 16, weight: .semibold))
+                                    }
+                                    Text(viewModel.isLoadingAISuggestion ? "AI가 분석 중..." : "AI가 제목/설명 추천")
+                                        .font(.subheadline.weight(.bold))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 14)
+                                .foregroundColor(.white)
+                                .background(
+                                    LinearGradient(
+                                        colors: [Theme.Colors.violetAccent, Theme.Colors.violetAccent.opacity(0.7)],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
+                                    )
+                                )
+                                .cornerRadius(12)
+                            }
+                            .disabled(viewModel.isLoadingAISuggestion)
+                            .accessibilityLabel("AI 상품 정보 추천")
+                            .accessibilityHint("AI가 스캔한 모델을 분석하여 상품명과 설명을 자동으로 추천합니다.")
+                        }
+
                         // Text Form Section
                         VStack(alignment: .leading, spacing: Theme.Spacing.lg) {
-                            
+
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("상품명 *")
                                     .font(.headline)

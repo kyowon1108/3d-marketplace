@@ -5,7 +5,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import SessionLocal
-from app.routers import auth, chat, model_assets, products, storage, uploads
+from app.routers import ai, auth, chat, model_assets, products, storage, uploads
 
 
 def _resolve_cors_origins() -> list[str]:
@@ -39,6 +39,7 @@ def create_app() -> FastAPI:
     application.include_router(chat.router)
     application.include_router(auth.router)
     application.include_router(storage.router)
+    application.include_router(ai.router)
 
     @application.get("/healthz")
     def healthz() -> dict[str, str]:

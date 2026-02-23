@@ -57,4 +57,7 @@ class ArAssetService:
             files=ar_files,
             dims_source=asset.dims_source,
             dims_trust=_dims_trust(asset.dims_source),
+            dims_width=asset.dims_width,
+            dims_height=asset.dims_height,
+            dims_depth=asset.dims_depth,
         )

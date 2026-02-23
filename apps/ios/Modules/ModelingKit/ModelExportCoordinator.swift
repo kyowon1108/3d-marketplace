@@ -2,6 +2,35 @@ import Foundation
 import SceneKit
 import UIKit
 
+/// Extracted model dimensions in meters.
+public struct ModelDimensions {
+    /// Width in meters (X axis)
+    public let width: Double
+    /// Height in meters (Y axis)
+    public let height: Double
+    /// Depth in meters (Z axis)
+    public let depth: Double
+
+    /// Width in centimeters, rounded to 1 decimal place.
+    public var widthCm: Double { (width * 100).rounded(toPlaces: 1) }
+    /// Height in centimeters, rounded to 1 decimal place.
+    public var heightCm: Double { (height * 100).rounded(toPlaces: 1) }
+    /// Depth in centimeters, rounded to 1 decimal place.
+    public var depthCm: Double { (depth * 100).rounded(toPlaces: 1) }
+
+    /// Formatted string like "45.2 × 30.1 × 80.5 cm"
+    public var formattedCm: String {
+        "\(widthCm) × \(heightCm) × \(depthCm) cm"
+    }
+}
+
+private extension Double {
+    func rounded(toPlaces places: Int) -> Double {
+        let divisor = pow(10.0, Double(places))
+        return (self * divisor).rounded() / divisor
+    }
+}
+
 /// Coordinates USDZ/GLB export from a generated model.
 /// GLB export is deferred to a future release.
 public struct ModelExportCoordinator {
@@ -12,6 +41,26 @@ public struct ModelExportCoordinator {
     public func usdzURL(in directory: URL) -> URL? {
         let url = directory.appendingPathComponent("model.usdz")
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
+    }
+
+    /// Extracts bounding box dimensions from a USDZ file using SceneKit.
+    /// Returns nil if the scene cannot be loaded or has degenerate bounds.
+    public func extractDimensions(from usdzURL: URL) -> ModelDimensions? {
+        guard let scene = try? SCNScene(url: usdzURL, options: nil) else {
+            return nil
+        }
+
+        let (min, max) = scene.rootNode.boundingBox
+        let width  = Double(max.x - min.x)
+        let height = Double(max.y - min.y)
+        let depth  = Double(max.z - min.z)
+
+        // Reject degenerate bounding boxes
+        guard width > 0.001, height > 0.001, depth > 0.001 else {
+            return nil
+        }
+
+        return ModelDimensions(width: width, height: height, depth: depth)
     }
 
     /// Generates a thumbnail PNG snapshot from a USDZ file using SceneKit.

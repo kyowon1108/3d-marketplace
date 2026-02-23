@@ -30,6 +30,11 @@ public class SellNewViewModel {
     public var generatedModelURL: URL? = nil
     public var generatedThumbnailURL: URL? = nil
     public var uploadedAssetId: String? = nil
+    public var extractedDimensions: ModelDimensions? = nil
+
+    // AI suggest
+    public var isLoadingAISuggestion: Bool = false
+    public var aiSuggestionError: String? = nil
 
     // Error state
     public var uploadError: String? = nil
@@ -84,6 +89,15 @@ public class SellNewViewModel {
             self.generatedModelURL = url
             self.processingProgress = 0.7
             self.processingStatusText = "3D 모델 완성!"
+            // Extract dimensions from the generated USDZ
+            self.extractedDimensions = exportCoordinator.extractDimensions(from: url)
+            #if DEBUG
+            if let dims = self.extractedDimensions {
+                print("[Modeling] Extracted dims: \(dims.formattedCm)")
+            } else {
+                print("[Modeling] Could not extract dimensions from USDZ")
+            }
+            #endif
             Task {
                 try? await Task.sleep(nanoseconds: 500_000_000)
                 self.currentStep = .upload
@@ -159,10 +173,10 @@ public class SellNewViewModel {
                 }
 
                 let initRequest = UploadInitRequest(
-                    dims_source: "ios_lidar",
-                    dims_width: nil,
-                    dims_height: nil,
-                    dims_depth: nil,
+                    dims_source: extractedDimensions != nil ? "ios_lidar" : "unknown",
+                    dims_width: extractedDimensions?.widthCm,
+                    dims_height: extractedDimensions?.heightCm,
+                    dims_depth: extractedDimensions?.depthCm,
                     capture_session_id: nil,
                     files: [UploadInitRequest.FileInfo(role: "MODEL_USDZ", size_bytes: fileSize)],
                     images: imagesArray
@@ -276,6 +290,59 @@ public class SellNewViewModel {
         }
     }
 
+    public func requestAISuggestion() {
+        guard let thumbnailURL = generatedThumbnailURL else {
+            NotificationCenter.default.post(
+                name: .showToast,
+                object: Toast(message: "썸네일이 없어 AI 추천을 사용할 수 없습니다.", style: .info)
+            )
+            return
+        }
+
+        isLoadingAISuggestion = true
+        aiSuggestionError = nil
+
+        Task {
+            do {
+                // Build a URL for the thumbnail accessible from the server
+                let thumbURLString: String
+                if let assetId = uploadedAssetId {
+                    // Server base without /v1 suffix for storage endpoint
+                    let apiBase = AppEnvironment.current.apiBaseURL
+                    let serverBase = apiBase.replacingOccurrences(of: "/v1", with: "")
+                    thumbURLString = "\(serverBase)/storage/assets/\(assetId)/thumbnail.jpg"
+                } else {
+                    thumbURLString = thumbnailURL.absoluteString
+                }
+
+                let request = AISuggestListingRequest(
+                    thumbnail_url: thumbURLString,
+                    dims_width: extractedDimensions?.widthCm,
+                    dims_height: extractedDimensions?.heightCm,
+                    dims_depth: extractedDimensions?.depthCm,
+                    dims_source: extractedDimensions != nil ? "ios_lidar" : nil
+                )
+                let body = try JSONEncoder().encode(request)
+                let response: AISuggestListingResponse = try await APIClient.shared.request(
+                    endpoint: "/ai/suggest-listing",
+                    method: "POST",
+                    body: body
+                )
+
+                self.publishTitle = response.suggested_title
+                self.publishDescription = response.suggested_description
+                self.isLoadingAISuggestion = false
+            } catch {
+                self.isLoadingAISuggestion = false
+                self.aiSuggestionError = (error as? APIError)?.userMessage ?? "AI 추천 실패"
+                NotificationCenter.default.post(
+                    name: .showToast,
+                    object: Toast(message: self.aiSuggestionError ?? "AI 추천 실패", style: .error)
+                )
+            }
+        }
+    }
+
     public func publishProduct() {
         guard !publishTitle.isEmpty, !publishPrice.isEmpty else {
             NotificationCenter.default.post(
@@ -335,9 +402,12 @@ public class SellNewViewModel {
         self.publishDescription = ""
         self.capturedFolderURL = nil
         self.generatedModelURL = nil
+        self.extractedDimensions = nil
         self.uploadedAssetId = nil
         self.uploadError = nil
         self.modelingError = nil
+        self.isLoadingAISuggestion = false
+        self.aiSuggestionError = nil
     }
 
     // MARK: - Private

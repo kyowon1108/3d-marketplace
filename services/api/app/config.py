@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     google_client_secret: str = ""
     google_ios_client_id: str = ""
 
+    # OpenAI (for AI listing suggestions)
+    openai_api_key: str = ""
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
