@@ -1,12 +1,14 @@
 import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, Request
+from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.middleware.auth import get_current_user, get_optional_user
 from app.middleware.idempotency import IdempotencyChecker
-from app.models.enums import ImageType
+from app.models.enums import ImageType, ProductStatus
 from app.models.product import Product
 from app.models.user import User
 from app.repositories.product_like_repo import ProductLikeRepo
@@ -244,25 +246,32 @@ def purchase_product(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> PurchaseResponse:
-    repo = ProductRepo(db)
-    product = repo.get_by_id(product_id)
+    # Lock the product row to prevent concurrent purchases
+    product = db.execute(
+        select(Product).where(Product.id == product_id).with_for_update()
+    ).scalar_one_or_none()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
     if product.seller_id == user.id:
         raise HTTPException(status_code=403, detail="Cannot purchase your own product")
 
-    if product.status == "SOLD_OUT":
+    if product.status == ProductStatus.SOLD_OUT:
         raise HTTPException(status_code=400, detail="Product is already sold out")
 
     purchase_repo = PurchaseRepo(db)
-    purchase = purchase_repo.create(
-        product_id=product.id,
-        buyer_id=user.id,
-        price_cents=product.price_cents,
-    )
-    repo.update_status(product.id, "SOLD_OUT")
-    db.commit()
+    try:
+        purchase = purchase_repo.create(
+            product_id=product.id,
+            buyer_id=user.id,
+            price_cents=product.price_cents,
+        )
+        repo = ProductRepo(db)
+        repo.update_status(product.id, ProductStatus.SOLD_OUT)
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Product already purchased")
     db.refresh(purchase)
 
     product_resp = _build_product_response(product)

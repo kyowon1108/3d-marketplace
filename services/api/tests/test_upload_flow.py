@@ -1,5 +1,6 @@
 import hashlib
 import uuid
+from urllib.parse import parse_qs, urlparse
 
 from app.services.storage_service import StorageService
 
@@ -44,6 +45,10 @@ def test_init_response_json_format(client, auth_headers):
     assert isinstance(pu["role"], str)
     assert isinstance(pu["url"], str)
     assert isinstance(pu["expires_at"], str)  # datetime serialized as string
+    query = parse_qs(urlparse(pu["url"]).query)
+    assert "exp" in query and len(query["exp"]) == 1
+    assert query["exp"][0].isdigit()
+    assert "sig" in query and len(query["sig"]) == 1
 
 
 def test_init_upload_unauthorized(client):

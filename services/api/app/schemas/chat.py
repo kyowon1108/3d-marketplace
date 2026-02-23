@@ -34,3 +34,11 @@ class ChatMessageResponse(BaseModel):
     sender_id: uuid.UUID
     body: str
     created_at: datetime
+
+
+class ChatRoomListResponse(BaseModel):
+    rooms: list[ChatRoomResponse]
+
+
+class ChatMessageListResponse(BaseModel):
+    messages: list[ChatMessageResponse]

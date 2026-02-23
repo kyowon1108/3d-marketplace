@@ -1,3 +1,6 @@
+from unittest.mock import patch
+
+
 def test_get_providers(client):
     resp = client.get("/v1/auth/providers")
     assert resp.status_code == 200
@@ -35,3 +38,22 @@ def test_get_summary(client, auth_headers):
     data = resp.json()
     assert data["product_count"] == 0
     assert data["unread_messages"] == 0
+
+
+# --- Dev auth disabled tests ---
+
+
+def test_providers_excludes_dev_when_disabled(client):
+    with patch("app.services.auth_service.settings") as mock_settings:
+        mock_settings.dev_auth_enabled = False
+        mock_settings.google_client_id = ""
+        resp = client.get("/v1/auth/providers")
+    assert resp.status_code == 200
+    assert "dev" not in resp.json()["providers"]
+
+
+def test_dev_callback_returns_404_when_disabled(client):
+    with patch("app.routers.auth.settings") as mock_settings:
+        mock_settings.dev_auth_enabled = False
+        resp = client.get("/v1/auth/oauth/dev/callback?code=test@example.com:Test")
+    assert resp.status_code == 404

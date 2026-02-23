@@ -1,7 +1,6 @@
 import json
 import uuid
 from datetime import datetime
-from typing import Any
 
 from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -10,21 +9,27 @@ from app.database import SessionLocal, get_db
 from app.middleware.auth import get_current_user, resolve_user_from_token
 from app.models.user import User
 from app.repositories.chat_repo import ChatRepo
-from app.schemas.chat import ChatMessageResponse, ChatRoomResponse, SendMessageRequest
+from app.schemas.chat import (
+    ChatMessageListResponse,
+    ChatMessageResponse,
+    ChatRoomListResponse,
+    ChatRoomResponse,
+    SendMessageRequest,
+)
 from app.services.chat_service import ChatService
 from app.services.connection_manager import manager
 
 router = APIRouter(tags=["chat"])
 
 
-@router.get("/v1/chat-rooms", response_model=dict[str, Any])
+@router.get("/v1/chat-rooms", response_model=ChatRoomListResponse)
 def list_chat_rooms(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> dict[str, Any]:
+) -> ChatRoomListResponse:
     svc = ChatService(db)
     rooms = svc.list_rooms(user.id)
-    return {"rooms": rooms}
+    return ChatRoomListResponse(rooms=rooms)
 
 
 @router.post("/v1/chat-rooms/{room_id}/read", response_model=ChatRoomResponse)
@@ -37,17 +42,17 @@ def mark_room_read(
     return svc.mark_read(room_id=room_id, user_id=user.id)
 
 
-@router.get("/v1/chat-rooms/{room_id}/messages", response_model=dict[str, Any])
+@router.get("/v1/chat-rooms/{room_id}/messages", response_model=ChatMessageListResponse)
 def get_chat_messages(
     room_id: uuid.UUID,
     before: datetime | None = None,
     limit: int = 50,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
-) -> dict[str, Any]:
+) -> ChatMessageListResponse:
     svc = ChatService(db)
     messages = svc.get_messages(room_id=room_id, user_id=user.id, before=before, limit=limit)
-    return {"messages": messages}
+    return ChatMessageListResponse(messages=messages)
 
 
 @router.post(

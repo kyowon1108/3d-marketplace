@@ -1,6 +1,9 @@
 import hashlib
 import uuid
 
+from sqlalchemy import update
+
+from app.models.product import Product
 from app.models.user import User
 from app.services.storage_service import StorageService
 
@@ -136,3 +139,29 @@ def test_purchase_not_found(client, db):
     buyer, buyer_headers = _create_buyer(db)
     resp = client.post(f"/v1/products/{uuid.uuid4()}/purchase", headers=buyer_headers)
     assert resp.status_code == 404
+
+
+def test_duplicate_purchase_returns_409(client, auth_headers, test_user, db):
+    """Two purchases of the same product: second must get 409 (unique constraint)."""
+    product = _publish_product(client, auth_headers, "Unique Item", 3000)
+    buyer, buyer_headers = _create_buyer(db)
+
+    resp1 = client.post(f"/v1/products/{product['id']}/purchase", headers=buyer_headers)
+    assert resp1.status_code == 201
+
+    # Force product status back to FOR_SALE to bypass the status check,
+    # simulating a race condition where two requests read status before either writes.
+    db.execute(
+        update(Product).where(Product.id == uuid.UUID(product["id"])).values(status="FOR_SALE")
+    )
+    db.commit()
+
+    buyer2 = User(email="buyer3@example.com", name="Buyer3", provider="dev")
+    db.add(buyer2)
+    db.commit()
+    db.refresh(buyer2)
+    buyer2_headers = {"Authorization": f"Bearer {buyer2.id}"}
+
+    resp2 = client.post(f"/v1/products/{product['id']}/purchase", headers=buyer2_headers)
+    assert resp2.status_code == 409
+    assert "already purchased" in resp2.json()["detail"].lower()

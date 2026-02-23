@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, func
+from sqlalchemy import BigInteger, DateTime, ForeignKey, Index, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
@@ -12,6 +12,7 @@ class Purchase(Base):
     __table_args__ = (
         Index("ix_purchases_buyer_id", "buyer_id"),
         Index("ix_purchases_product_id", "product_id"),
+        UniqueConstraint("product_id", name="uq_purchases_product_id"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)

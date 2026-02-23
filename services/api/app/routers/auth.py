@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy.orm import Session
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.enums import ImageType
@@ -40,6 +41,8 @@ def oauth_callback(
     svc = AuthService(db)
 
     if provider == "dev":
+        if not settings.dev_auth_enabled:
+            raise HTTPException(status_code=404, detail="Dev auth is not enabled")
         parts = code.split(":", 1)
         if len(parts) != 2:
             raise HTTPException(status_code=400, detail="Dev code must be email:name")

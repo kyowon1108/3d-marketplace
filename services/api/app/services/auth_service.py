@@ -61,7 +61,9 @@ class AuthService:
         )
 
     def get_providers(self) -> AuthProvidersResponse:
-        providers = ["dev"]
+        providers: list[str] = []
+        if settings.dev_auth_enabled:
+            providers.append("dev")
         if settings.google_client_id:
             providers.append("google")
         return AuthProvidersResponse(providers=providers)
