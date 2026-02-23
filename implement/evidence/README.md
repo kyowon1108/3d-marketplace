@@ -9,3 +9,8 @@
 1. 각 gate checklist 항목은 최소 1개 증빙 파일을 가져야 한다.
 2. 증빙에는 실행 명령, 결과 요약, 판정(정상/이슈)을 포함한다.
 3. 스크린샷/첨부가 있으면 상대 경로로 링크한다.
+
+## Directories
+- `db/` — Gate A (DB schema, migration, invariants)
+- `backend/` — Gate B (API endpoints, upload integrity, idempotency, security)
+- `ios/` — Gate C (screen parity, seller/buyer flow, Korean UI, accessibility)
