@@ -30,7 +30,7 @@ services:
     ports:
       - "8000:8000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:?required}:${POSTGRES_PASSWORD:?required}@postgres:5432/${POSTGRES_DB:?required}
+      DATABASE_URL: ${DATABASE_URL:?required}
       REDIS_URL: redis://redis:6379/0
       APP_ENV: beta
       DEV_AUTH_ENABLED: "false"
