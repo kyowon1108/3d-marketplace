@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: marketplace
+          POSTGRES_PASSWORD: marketplace
+          POSTGRES_DB: marketplace_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U marketplace"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://marketplace:marketplace@localhost:5433/marketplace_test
+      TEST_DATABASE_URL: postgresql://marketplace:marketplace@localhost:5433/marketplace_test
+      APP_ENV: test
+      DEV_AUTH_ENABLED: "true"
+      STORAGE_UPLOAD_SIGNING_SECRET: test-signing-secret-key-at-least-32
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - run: ruff check .
+      - run: alembic -c alembic.ini upgrade head
+      - run: pytest tests/ -v
+
+  web:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - run: npm ci
+      - run: npx tsc --noEmit

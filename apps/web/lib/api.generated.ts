@@ -106,6 +106,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/products/{id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Toggle like on a product */
+        post: operations["toggleProductLike"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/products/{id}/purchase": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Purchase a product (creates purchase record and marks product SOLD_OUT) */
+        post: operations["purchaseProduct"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/products/{id}/ar-asset": {
         parameters: {
             query?: never;
@@ -151,6 +185,23 @@ export interface paths {
         get: operations["listChatRooms"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/chat-rooms/{roomId}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mark all messages in a chat room as read */
+        post: operations["markChatRoomRead"];
         delete?: never;
         options?: never;
         head?: never;
@@ -209,6 +260,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/auth/oauth/{provider}/token": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Mobile OAuth token exchange (iOS sends provider id_token) */
+        post: operations["oauthTokenExchange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/token/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh access token using refresh token */
+        post: operations["refreshToken"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Revoke refresh token (logout) */
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/v1/auth/me": {
         parameters: {
             query?: never;
@@ -218,6 +320,23 @@ export interface paths {
         };
         /** Get current authenticated user */
         get: operations["getCurrentUser"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/v1/me/purchases": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List current user's purchase history */
+        get: operations["getMyPurchases"];
         put?: never;
         post?: never;
         delete?: never;
@@ -243,6 +362,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/v1/chats/{roomId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * WebSocket chat connection
+         * @description Upgrades to WebSocket for real-time chat messaging.
+         *     Authentication via `?token=<jwt>` query parameter.
+         *
+         *     Close codes:
+         *     - 4001: Missing or invalid token
+         *     - 4003: Not a participant in this room
+         *
+         *     Inbound message format: `{"body": "message text"}`
+         *     Outbound message format: `{"type": "message", "id": "uuid", "room_id": "uuid", "sender_id": "uuid", "body": "text", "created_at": "iso8601"}`
+         *
+         *     Messages are persisted to the database and broadcast to all room participants.
+         */
+        get: operations["websocketChat"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -250,6 +399,20 @@ export interface components {
         ErrorResponse: {
             error: string;
             detail?: string;
+        };
+        ImageInitMeta: {
+            /** @enum {string} */
+            image_type: "THUMBNAIL" | "DISPLAY";
+            /** @default 0 */
+            sort_order: number;
+            size_bytes: number;
+        };
+        ImageCompleteMeta: {
+            /** @enum {string} */
+            image_type: "THUMBNAIL" | "DISPLAY";
+            sort_order: number;
+            size_bytes: number;
+            checksum_sha256: string;
         };
         UploadInitRequest: {
             /** @enum {string} */
@@ -264,6 +427,16 @@ export interface components {
                 role: "MODEL_USDZ" | "MODEL_GLB" | "PREVIEW_PNG";
                 size_bytes: number;
             }[];
+            /** @default [] */
+            images: components["schemas"]["ImageInitMeta"][];
+        };
+        PresignedImageTarget: {
+            image_type: string;
+            sort_order: number;
+            /** Format: uri */
+            url: string;
+            /** Format: date-time */
+            expires_at: string;
         };
         UploadInitResponse: {
             /** Format: uuid */
@@ -277,6 +450,8 @@ export interface components {
                 /** Format: date-time */
                 expires_at: string;
             }[];
+            /** @default [] */
+            presigned_image_uploads: components["schemas"]["PresignedImageTarget"][];
         };
         UploadCompleteRequest: {
             /** Format: uuid */
@@ -287,6 +462,13 @@ export interface components {
                 size_bytes: number;
                 checksum_sha256: string;
             }[];
+            /** @default [] */
+            images: components["schemas"]["ImageCompleteMeta"][];
+        };
+        ImageVerifyResult: {
+            image_type: string;
+            sort_order: number;
+            verified: boolean;
         };
         UploadCompleteResponse: {
             /** Format: uuid */
@@ -297,6 +479,17 @@ export interface components {
                 role: string;
                 verified: boolean;
             }[];
+            /** @default [] */
+            image_results: components["schemas"]["ImageVerifyResult"][];
+        };
+        AssetImageInfo: {
+            /** Format: uuid */
+            id: string;
+            /** @enum {string} */
+            image_type: "THUMBNAIL" | "DISPLAY";
+            storage_key: string;
+            size_bytes: number;
+            sort_order: number;
         };
         ModelAssetResponse: {
             /** Format: uuid */
@@ -313,6 +506,8 @@ export interface components {
             dims_height?: number | null;
             dims_depth?: number | null;
             files: components["schemas"]["AssetFileInfo"][];
+            /** @default [] */
+            images: components["schemas"]["AssetImageInfo"][];
             /** Format: date-time */
             created_at: string;
             /** Format: date-time */
@@ -348,6 +543,8 @@ export interface components {
             description?: string;
             price_cents: number;
         };
+        /** @enum {string} */
+        ProductStatus: "FOR_SALE" | "RESERVED" | "SOLD_OUT";
         ProductResponse: {
             /** Format: uuid */
             id: string;
@@ -362,12 +559,47 @@ export interface components {
             published_at?: string | null;
             /** Format: date-time */
             created_at: string;
+            /** @default  */
+            seller_name: string;
+            seller_avatar_url?: string | null;
+            thumbnail_url?: string | null;
+            status?: components["schemas"]["ProductStatus"];
+            /** @default 0 */
+            likes_count: number;
+            /** @default 0 */
+            views_count: number;
+            /** @default 0 */
+            chat_count: number;
+            seller_location_name?: string | null;
+            is_liked?: boolean | null;
         };
         ProductListResponse: {
             products: components["schemas"]["ProductResponse"][];
             total: number;
             page: number;
             limit: number;
+        };
+        PurchaseResponse: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: uuid */
+            buyer_id: string;
+            price_cents: number;
+            /** Format: date-time */
+            purchased_at: string;
+            product?: components["schemas"]["ProductResponse"];
+        };
+        PurchaseListResponse: {
+            purchases: components["schemas"]["PurchaseResponse"][];
+            total: number;
+            page: number;
+            limit: number;
+        };
+        LikeToggleResponse: {
+            liked: boolean;
+            likes_count: number;
         };
         CreateChatRoomRequest: {
             subject: string;
@@ -386,6 +618,16 @@ export interface components {
             created_at: string;
             /** Format: date-time */
             last_message_at?: string | null;
+            last_message_body?: string | null;
+            /** @default 0 */
+            unread_count: number;
+            /** @default  */
+            buyer_name: string;
+            /** @default  */
+            seller_name: string;
+            /** @default  */
+            product_title: string;
+            product_thumbnail_url?: string | null;
         };
         ChatMessageResponse: {
             /** Format: uuid */
@@ -406,8 +648,26 @@ export interface components {
         };
         AuthTokenResponse: {
             access_token: string;
+            refresh_token?: string | null;
             token_type: string;
+            expires_in?: number | null;
             user: components["schemas"]["UserResponse"];
+        };
+        GoogleTokenRequest: {
+            id_token?: string | null;
+            code?: string | null;
+        };
+        TokenRefreshRequest: {
+            refresh_token: string;
+        };
+        TokenRefreshResponse: {
+            access_token: string;
+            refresh_token: string;
+            token_type: string;
+            expires_in: number;
+        };
+        LogoutRequest: {
+            refresh_token: string;
         };
         UserResponse: {
             /** Format: uuid */
@@ -415,6 +675,13 @@ export interface components {
             email: string;
             name: string;
             provider: string;
+            avatar_url?: string | null;
+            /**
+             * Format: float
+             * @default 36.5
+             */
+            trust_score: number;
+            location_name?: string | null;
             /** Format: date-time */
             created_at: string;
         };
@@ -593,6 +860,10 @@ export interface operations {
                 q?: string;
                 page?: number;
                 limit?: number;
+                /** @description Filter products by seller UUID */
+                seller_id?: string;
+                /** @description If true, return only products liked by the authenticated user (requires auth) */
+                liked?: boolean;
             };
             header?: never;
             path?: never;
@@ -631,6 +902,56 @@ export interface operations {
                     "application/json": components["schemas"]["ProductResponse"];
                 };
             };
+            404: components["responses"]["NotFound"];
+        };
+    };
+    toggleProductLike: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Like toggled */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LikeToggleResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            404: components["responses"]["NotFound"];
+        };
+    };
+    purchaseProduct: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Purchase created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
             404: components["responses"]["NotFound"];
         };
     };
@@ -705,6 +1026,31 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    markChatRoomRead: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                roomId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Room marked as read */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChatRoomResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+            403: components["responses"]["Forbidden"];
+            404: components["responses"]["NotFound"];
         };
     };
     getChatMessages: {
@@ -807,6 +1153,81 @@ export interface operations {
             };
         };
     };
+    oauthTokenExchange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                provider: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["GoogleTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Auth token */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthTokenResponse"];
+                };
+            };
+            400: components["responses"]["BadRequest"];
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    refreshToken: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TokenRefreshRequest"];
+            };
+        };
+        responses: {
+            /** @description New token pair */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenRefreshResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LogoutRequest"];
+            };
+        };
+        responses: {
+            /** @description Logged out */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     getCurrentUser: {
         parameters: {
             query?: never;
@@ -823,6 +1244,30 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserResponse"];
+                };
+            };
+            401: components["responses"]["Unauthorized"];
+        };
+    };
+    getMyPurchases: {
+        parameters: {
+            query?: {
+                page?: number;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Purchase list */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PurchaseListResponse"];
                 };
             };
             401: components["responses"]["Unauthorized"];
@@ -847,6 +1292,29 @@ export interface operations {
                 };
             };
             401: components["responses"]["Unauthorized"];
+        };
+    };
+    websocketChat: {
+        parameters: {
+            query: {
+                /** @description JWT access token for authentication */
+                token: string;
+            };
+            header?: never;
+            path: {
+                roomId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description WebSocket upgrade successful */
+            101: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
         };
     };
 }

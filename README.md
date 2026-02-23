@@ -31,7 +31,7 @@ Product Browse → Product Detail → AR Placement (footprint-first, 단일 모�
 
 ## Database
 
-PostgreSQL 16. Alembic으로 마이그레이션 관리 (현재 revision 009).
+PostgreSQL 16. Alembic으로 마이그레이션 관리 (현재 revision 011).
 
 ### 테이블 목록
 

@@ -35,6 +35,7 @@ services:
       DATABASE_URL: postgresql://marketplace:marketplace@postgres:5432/marketplace
       REDIS_URL: redis://redis:6379/0
       APP_ENV: local
+      DEV_AUTH_ENABLED: "true"
       STORAGE_BACKEND: local
       STORAGE_LOCAL_PATH: /app/storage
       SERVER_BASE_URL: http://100.95.177.6:8000
