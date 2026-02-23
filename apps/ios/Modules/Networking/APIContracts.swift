@@ -54,6 +54,15 @@ struct PurchaseAPIResponse: Decodable, Identifiable {
     let product: ProductResponse?
 }
 
+struct PurchaseResponse: Decodable, Identifiable {
+    let id: String
+    let product_id: String
+    let buyer_id: String
+    let price_cents: Int
+    let purchased_at: String
+    let product: ProductResponse?
+}
+
 struct PurchaseListAPIResponse: Decodable {
     let purchases: [PurchaseAPIResponse]
     let total: Int

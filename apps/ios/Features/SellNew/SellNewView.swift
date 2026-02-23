@@ -51,32 +51,50 @@ struct SellNewView: View {
                         
                         // Image / Asset Section
                         VStack(alignment: .leading, spacing: Theme.Spacing.sm) {
-                            Text("에셋 첨부 (선택)")
+                            Text("에셋 첨부 (필수)")
                                 .font(.headline)
                                 .foregroundColor(Theme.Colors.textPrimary)
                             
-                            if viewModel.uploadedAssetId != nil {
+                            if let uploadedAssetId = viewModel.uploadedAssetId {
                                 // Captured 3D Model Card
-                                HStack {
-                                    Image(systemName: "checkmark.seal.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(.green)
-                                    VStack(alignment: .leading) {
-                                        Text("3D 모델 업로드 완료")
-                                            .font(.headline)
-                                            .foregroundColor(Theme.Colors.textPrimary)
-                                        Text("LiDAR 정밀 스캔")
-                                            .font(.caption)
-                                            .foregroundColor(Theme.Colors.textSecondary)
-                                    }
-                                    Spacer()
-                                    Button("다시 스캔하기") {
-                                        withAnimation {
-                                            viewModel.currentStep = .intro
+                                VStack(alignment: .leading, spacing: Theme.Spacing.md) {
+                                    HStack {
+                                        Image(systemName: "checkmark.seal.fill")
+                                            .font(.title3)
+                                            .foregroundColor(.green)
+                                        VStack(alignment: .leading) {
+                                            Text("3D 모델 업로드 완료")
+                                                .font(.headline)
+                                                .foregroundColor(Theme.Colors.textPrimary)
+                                            Text("LiDAR 정밀 스캔")
+                                                .font(.caption)
+                                                .foregroundColor(Theme.Colors.textSecondary)
                                         }
+                                        Spacer()
+                                        Button("다시 스캔하기") {
+                                            withAnimation {
+                                                viewModel.currentStep = .intro
+                                            }
+                                        }
+                                        .font(.subheadline.weight(.bold))
+                                        .foregroundColor(Theme.Colors.violetAccent)
+                                        .accessibilityLabel("3D 모델 다시 스캔")
                                     }
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(Theme.Colors.violetAccent)
+
+                                    NavigationLink(destination: UploadStatusView(assetId: uploadedAssetId)) {
+                                        HStack {
+                                            Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
+                                            Text("업로드 상태 보기")
+                                        }
+                                        .font(.subheadline.weight(.semibold))
+                                        .foregroundColor(Theme.Colors.textPrimary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, 10)
+                                        .background(Theme.Colors.bgPrimary)
+                                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                                    }
+                                    .accessibilityLabel("업로드 상태 보기")
+                                    .accessibilityHint("업로드 상태 추적 화면으로 이동합니다.")
                                 }
                                 .padding()
                                 .background(Theme.Colors.bgSecondary)
@@ -116,6 +134,8 @@ struct SellNewView: View {
                                             )
                                     )
                                 }
+                                .accessibilityLabel("LiDAR 스캔 시작")
+                                .accessibilityHint("현실 물체를 스캔해 3D 모델을 업로드합니다.")
                             }
                         }
                         

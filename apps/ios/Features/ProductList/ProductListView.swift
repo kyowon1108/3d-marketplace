@@ -3,17 +3,21 @@ import SwiftUI
 struct ProductListView: View {
     @State private var searchText = ""
     @State private var selectedCategory = "최신순"
-    let categories = ["최신순", "인기순", "무료", "기기/장비", "의류", "인테리어"]
+    let categories = ["최신순", "인기순", "무료"]
     
     @State private var products: [Product] = []
     @State private var isLoading = true
     
     var filteredProducts: [Product] {
+        let searched: [Product]
         if searchText.isEmpty {
-            return products
+            searched = products
         } else {
-            return products.filter { $0.title.localizedCaseInsensitiveContains(searchText) || $0.creator.localizedCaseInsensitiveContains(searchText) }
+            searched = products.filter {
+                $0.title.localizedCaseInsensitiveContains(searchText) || $0.creator.localizedCaseInsensitiveContains(searchText)
+            }
         }
+        return applyCategoryFilter(to: searched)
     }
     
     var body: some View {
@@ -42,7 +46,7 @@ struct ProductListView: View {
                             actionTitle: searchText.isEmpty ? "+ 새로운 3D 모델 만들기" : nil
                         ) {
                             if searchText.isEmpty {
-                                AppToast(message: "Sell Now 탭으로 이동합니다", style: .info)
+                                NotificationCenter.default.post(name: .switchToSellTab, object: nil)
                             }
                         }
                         Spacer()
@@ -68,12 +72,40 @@ struct ProductListView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(Theme.Colors.bgPrimary, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    NavigationLink(destination: SearchView()) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.headline)
+                            .foregroundColor(Theme.Colors.textPrimary)
+                    }
+                    .accessibilityLabel("검색 화면 열기")
+                    .accessibilityHint("상품 검색 화면으로 이동합니다.")
+                }
+            }
             .navigationDestination(for: UUID.self) { id in ProductDetailView(productId: id) }
         }
         .searchable(text: $searchText, prompt: "3D 모델 검색...")
         .onAppear {
             if products.isEmpty {
                 Task { await fetchData() }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .productPurchased)) { notification in
+            guard let event = notification.object as? ProductPurchaseEvent else { return }
+            products = products.map { product in
+                guard product.id == event.productId else { return product }
+                return Product(
+                    id: product.id,
+                    title: product.title,
+                    creator: product.creator,
+                    priceCents: product.priceCents,
+                    status: "SOLD_OUT",
+                    likes: product.likes,
+                    thumbnailUrl: product.thumbnailUrl,
+                    createdAt: product.createdAt,
+                    chatCount: product.chatCount
+                )
             }
         }
     }
@@ -88,6 +120,7 @@ struct ProductListView: View {
                     title: p.title,
                     creator: p.seller_name ?? "알 수 없는 판매자",
                     priceCents: p.price_cents,
+                    status: p.status,
                     likes: p.likes_count ?? 0,
                     thumbnailUrl: p.thumbnail_url,
                     createdAt: p.created_at,
@@ -108,5 +141,22 @@ struct ProductListView: View {
             }
         }
     }
-}
 
+    private func applyCategoryFilter(to source: [Product]) -> [Product] {
+        switch selectedCategory {
+        case "인기순":
+            return source.sorted { lhs, rhs in
+                if lhs.likes == rhs.likes {
+                    return lhs.createdAt > rhs.createdAt
+                }
+                return lhs.likes > rhs.likes
+            }
+        case "무료":
+            return source
+                .filter { $0.priceCents == 0 }
+                .sorted { $0.createdAt > $1.createdAt }
+        default:
+            return source.sorted { $0.createdAt > $1.createdAt }
+        }
+    }
+}

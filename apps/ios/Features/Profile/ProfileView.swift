@@ -182,6 +182,7 @@ struct ProfileView: View {
                         title: p.title,
                         creator: p.seller_name ?? "알 수 없는 판매자",
                         priceCents: p.price_cents,
+                        status: p.status,
                         likes: p.likes_count ?? 0,
                         thumbnailUrl: p.thumbnail_url,
                         createdAt: p.created_at,
@@ -214,6 +215,7 @@ struct ProfileView: View {
                         title: p.title,
                         creator: p.seller_name ?? "알 수 없는 판매자",
                         priceCents: p.price_cents,
+                        status: p.status,
                         likes: p.likes_count ?? 0,
                         thumbnailUrl: p.thumbnail_url,
                         createdAt: p.created_at,
@@ -239,6 +241,7 @@ struct ProfileView: View {
 private struct MyProductsListView: View {
     let products: [Product]
     var title: String = "목록"
+    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         ZStack {
@@ -250,7 +253,10 @@ private struct MyProductsListView: View {
                     message: "아직 등록된(관심있는) 상품이 없습니다.",
                     systemImage: "cube.box",
                     actionTitle: "홈으로 가기"
-                ) {}
+                ) {
+                    dismiss()
+                    NotificationCenter.default.post(name: .switchToHomeTab, object: nil)
+                }
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -281,6 +287,7 @@ struct PurchaseHistoryView: View {
     @State private var purchases: [PurchaseItem] = []
     @State private var isLoading = true
     @State private var totalCount = 0
+    @Environment(\.dismiss) private var dismiss
 
     struct PurchaseItem: Identifiable {
         let id: UUID
@@ -307,7 +314,10 @@ struct PurchaseHistoryView: View {
                     message: "아직 구매한 상품이 없습니다.",
                     systemImage: "bag",
                     actionTitle: "홈으로 가기"
-                ) {}
+                ) {
+                    dismiss()
+                    NotificationCenter.default.post(name: .switchToHomeTab, object: nil)
+                }
             } else {
                 ScrollView {
                     LazyVStack(spacing: 0) {
@@ -355,6 +365,7 @@ struct PurchaseHistoryView: View {
                         title: pr.title,
                         creator: pr.seller_name ?? "판매자",
                         priceCents: pr.price_cents,
+                        status: pr.status,
                         likes: pr.likes_count ?? 0,
                         thumbnailUrl: pr.thumbnail_url,
                         createdAt: pr.created_at,

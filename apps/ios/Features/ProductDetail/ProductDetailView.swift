@@ -30,6 +30,8 @@ struct ProductDetailView: View {
     @State private var isCreatingChat = false
     @State private var showChatRoom = false
     @State private var createdChatRoom: ChatRoomResponse?
+    @State private var showPurchaseConfirmation = false
+    @State private var isPurchasing = false
 
     var body: some View {
         ZStack(alignment: .bottom) {
@@ -100,6 +102,20 @@ struct ProductDetailView: View {
                 NavigationStack {
                     ChatRoomView(room: room)
                 }
+            }
+        }
+        .confirmationDialog(
+            "상품을 구매하시겠어요?",
+            isPresented: $showPurchaseConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("구매하기") {
+                purchaseProduct()
+            }
+            Button("취소", role: .cancel) {}
+        } message: {
+            if let product = productDetail {
+                Text("\(product.title)을(를) 구매하면 판매완료 처리됩니다.")
             }
         }
         .tutorialModal(
@@ -189,6 +205,8 @@ struct ProductDetailView: View {
             .padding(Theme.Spacing.md)
             .padding(.bottom, Theme.Spacing.md)
             .disabled(productDetail == nil || arAvailability == "NONE" || isDownloadingModel)
+            .accessibilityLabel(downloadedModelURL != nil ? "AR로 보기" : "3D 모델 불러오기")
+            .accessibilityHint("증강현실 화면으로 이동하거나 AR 모델을 다운로드합니다.")
         }
     }
 
@@ -272,7 +290,7 @@ struct ProductDetailView: View {
                     Text("·")
                     Text("채팅 \(product.chat_count ?? 0)")
                     Text("·")
-                    Text("관심 \(product.likes_count ?? 0)")
+                    Text("관심 \(likesCount)")
                 }
                 .font(.system(size: 13))
                 .foregroundColor(Theme.Colors.textSecondary)
@@ -321,6 +339,8 @@ struct ProductDetailView: View {
                     .frame(width: 44)
                 }
                 .disabled(isTogglingLike || !authManager.isAuthenticated)
+                .accessibilityLabel(isLiked ? "좋아요 취소" : "좋아요")
+                .accessibilityHint("이 상품의 관심 상태를 변경합니다.")
 
                 // Divider Line replacing the thick padding divider
                 Rectangle()
@@ -331,42 +351,71 @@ struct ProductDetailView: View {
                 // Price
                 if let product = productDetail {
                     Text(formatPrice(product.price_cents))
-                        .font(.system(size: 20, weight: .bold))
+                        .font(.title3.weight(.bold))
                         .foregroundColor(Theme.Colors.textPrimary)
                 } else {
                     Text("가격 정보 없음")
-                        .font(.system(size: 16))
+                        .font(.body)
                         .foregroundColor(Theme.Colors.textSecondary)
                 }
 
                 Spacer()
 
-                // Chat CTA
+                // Buyer CTAs
                 if let product = productDetail, authManager.isAuthenticated, authManager.currentUser?.id != product.seller_id {
-                    Button(action: createChatRoom) {
-                        HStack {
-                            if isCreatingChat {
-                                ProgressView().tint(.white).scaleEffect(0.8)
+                    HStack(spacing: Theme.Spacing.sm) {
+                        Button(action: createChatRoom) {
+                            HStack {
+                                if isCreatingChat {
+                                    ProgressView().tint(.white).scaleEffect(0.8)
+                                }
+                                Text(isCreatingChat ? "열리는 중..." : "채팅")
                             }
-                            Text(isCreatingChat ? "열리는 중..." : "채팅하기")
+                            .font(.subheadline.weight(.bold))
+                            .foregroundColor(.white)
+                            .frame(minWidth: 72)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 12)
+                            .background(Theme.Colors.violetAccent.opacity(0.85))
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(minWidth: 100)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(Theme.Colors.violetAccent)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .disabled(isCreatingChat || product.status == "SOLD_OUT")
+                        .accessibilityLabel("채팅 시작")
+                        .accessibilityHint("판매자와 채팅방을 엽니다.")
+
+                        Button(action: {
+                            showPurchaseConfirmation = true
+                        }) {
+                            HStack {
+                                if isPurchasing {
+                                    ProgressView().tint(.white).scaleEffect(0.8)
+                                }
+                                Text(
+                                    product.status == "SOLD_OUT"
+                                    ? "판매완료"
+                                    : (isPurchasing ? "구매 중..." : "구매하기")
+                                )
+                            }
+                            .font(.subheadline.weight(.bold))
+                            .foregroundColor(.white)
+                            .frame(minWidth: 96)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(product.status == "SOLD_OUT" ? Color.gray : Color.green)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                        }
+                        .disabled(product.status == "SOLD_OUT" || isPurchasing)
+                        .accessibilityLabel(product.status == "SOLD_OUT" ? "판매완료 상품" : "상품 구매")
+                        .accessibilityHint(product.status == "SOLD_OUT" ? "이미 판매가 완료된 상품입니다." : "구매를 확인하고 결제를 진행합니다.")
                     }
-                    .disabled(isCreatingChat || product.status == "SOLD_OUT")
                 } else if authManager.isAuthenticated {
                     Text("내 상품")
-                        .font(.system(size: 16, weight: .bold))
+                        .font(.subheadline.weight(.bold))
                         .foregroundColor(Theme.Colors.textPrimary)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Theme.Colors.bgSecondary)
-                        .clipShape(RoundedRectangle(cornerRadius: 6))
+                        .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
@@ -602,6 +651,94 @@ struct ProductDetailView: View {
                 }
             }
         }
+    }
+
+    private func purchaseProduct() {
+        guard authManager.isAuthenticated else {
+            AppToast(message: "로그인이 필요합니다.", style: .error)
+            return
+        }
+        guard let product = productDetail else { return }
+        guard authManager.currentUser?.id != product.seller_id else {
+            AppToast(message: "내 상품은 구매할 수 없습니다.", style: .info)
+            return
+        }
+        guard product.status != "SOLD_OUT" else {
+            AppToast(message: "이미 판매가 완료된 상품입니다.", style: .info)
+            return
+        }
+
+        isPurchasing = true
+
+        Task {
+            do {
+                let _: PurchaseResponse = try await APIClient.shared.request(
+                    endpoint: "/products/\(productId.uuidString)/purchase",
+                    method: "POST"
+                )
+                await MainActor.run {
+                    isPurchasing = false
+                    markProductAsSoldOut()
+                    NotificationCenter.default.post(
+                        name: .productPurchased,
+                        object: ProductPurchaseEvent(productId: productId)
+                    )
+                    AppToast(message: "구매가 완료되었습니다.", style: .success)
+                }
+            } catch {
+                await MainActor.run {
+                    isPurchasing = false
+
+                    if case APIError.unauthenticated = error {
+                        authManager.logout()
+                        AppToast(message: "세션이 만료되었습니다. 다시 로그인해주세요.", style: .error)
+                        return
+                    }
+
+                    if case APIError.httpError(let code) = error {
+                        switch code {
+                        case 403:
+                            AppToast(message: "내 상품은 구매할 수 없습니다.", style: .error)
+                        case 400, 409:
+                            markProductAsSoldOut()
+                            NotificationCenter.default.post(
+                                name: .productPurchased,
+                                object: ProductPurchaseEvent(productId: productId)
+                            )
+                            AppToast(message: "이미 판매가 완료된 상품입니다.", style: .info)
+                        default:
+                            AppToast(message: (error as? APIError)?.userMessage ?? "구매 처리에 실패했습니다.", style: .error)
+                        }
+                        return
+                    }
+
+                    AppToast(message: (error as? APIError)?.userMessage ?? "구매 처리에 실패했습니다.", style: .error)
+                }
+            }
+        }
+    }
+
+    private func markProductAsSoldOut() {
+        guard let product = productDetail else { return }
+        productDetail = ProductResponse(
+            id: product.id,
+            asset_id: product.asset_id,
+            title: product.title,
+            description: product.description,
+            price_cents: product.price_cents,
+            seller_id: product.seller_id,
+            seller_name: product.seller_name,
+            seller_avatar_url: product.seller_avatar_url,
+            seller_location_name: product.seller_location_name,
+            thumbnail_url: product.thumbnail_url,
+            status: "SOLD_OUT",
+            chat_count: product.chat_count,
+            likes_count: likesCount,
+            views_count: product.views_count,
+            is_liked: isLiked,
+            published_at: product.published_at,
+            created_at: product.created_at
+        )
     }
 }
 

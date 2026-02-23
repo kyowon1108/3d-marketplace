@@ -27,6 +27,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: .switchToHomeTab)) { _ in
             selectedTab = .home
         }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToSellTab)) { _ in
+            selectedTab = .sell
+        }
     }
 
     @ViewBuilder

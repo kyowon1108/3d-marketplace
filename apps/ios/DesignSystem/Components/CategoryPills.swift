@@ -19,7 +19,7 @@ public struct CategoryPills: View {
                         }
                     }) {
                         Text(category)
-                            .font(.system(size: 15, weight: .semibold))
+                            .font(.subheadline.weight(.semibold))
                             .foregroundColor(selectedCategory == category ? .white : Theme.Colors.textSecondary)
                             .padding(.horizontal, Theme.Spacing.md)
                             .padding(.vertical, Theme.Spacing.sm)
@@ -34,6 +34,8 @@ public struct CategoryPills: View {
                     }
                     .buttonStyle(.plain)
                     .pressableScaleEffect()
+                    .accessibilityLabel("\(category) 정렬")
+                    .accessibilityHint("상품 목록을 \(category) 기준으로 정렬합니다.")
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)

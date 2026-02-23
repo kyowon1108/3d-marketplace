@@ -29,7 +29,7 @@ struct InboxView: View {
                             systemImage: "bubble.left.and.bubble.right",
                             actionTitle: "탐색 탭으로 가기"
                         ) {
-                            AppToast(message: "탐색 탭에서 상품을 찾아보세요", style: .info)
+                            NotificationCenter.default.post(name: .switchToHomeTab, object: nil)
                         }
                         Spacer()
                     } else {

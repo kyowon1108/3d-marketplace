@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 @main
 struct MarketplaceApp: App {
@@ -22,6 +23,12 @@ struct MarketplaceApp: App {
 extension Notification.Name {
     static let showToast = Notification.Name("showToast")
     static let switchToHomeTab = Notification.Name("switchToHomeTab")
+    static let switchToSellTab = Notification.Name("switchToSellTab")
+    static let productPurchased = Notification.Name("productPurchased")
+}
+
+struct ProductPurchaseEvent {
+    let productId: UUID
 }
 
 func AppToast(message: String, style: ToastStyle = .info) {

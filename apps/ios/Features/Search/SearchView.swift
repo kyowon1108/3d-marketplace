@@ -31,6 +31,7 @@ struct SearchView: View {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(Theme.Colors.textMuted)
                         }
+                        .accessibilityLabel("검색어 지우기")
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.md)
@@ -115,6 +116,23 @@ struct SearchView: View {
         .navigationDestination(for: UUID.self) { id in
             ProductDetailView(productId: id)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .productPurchased)) { notification in
+            guard let event = notification.object as? ProductPurchaseEvent else { return }
+            results = results.map { product in
+                guard product.id == event.productId else { return product }
+                return Product(
+                    id: product.id,
+                    title: product.title,
+                    creator: product.creator,
+                    priceCents: product.priceCents,
+                    status: "SOLD_OUT",
+                    likes: product.likes,
+                    thumbnailUrl: product.thumbnailUrl,
+                    createdAt: product.createdAt,
+                    chatCount: product.chatCount
+                )
+            }
+        }
     }
 
     private func performSearch() {
@@ -143,6 +161,7 @@ struct SearchView: View {
                         title: p.title,
                         creator: p.seller_name ?? "알 수 없는 판매자",
                         priceCents: p.price_cents,
+                        status: p.status,
                         likes: p.likes_count ?? 0,
                         thumbnailUrl: p.thumbnail_url,
                         createdAt: p.created_at,

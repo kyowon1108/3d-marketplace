@@ -6,6 +6,7 @@ struct Product: Identifiable {
     let title: String
     let creator: String
     let priceCents: Int
+    let status: String
     let likes: Int
     let thumbnailUrl: String?
     let createdAt: String
@@ -56,7 +57,7 @@ struct ProductListRow: View {
 
                 // 3D Badge
                 Text("3D")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.caption2.weight(.bold))
                     .foregroundColor(Theme.Colors.textPrimary)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 3)
@@ -71,22 +72,35 @@ struct ProductListRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 // Title
                 Text(product.title)
-                    .font(.system(size: 16, weight: .regular))
+                    .font(.body)
                     .foregroundColor(Theme.Colors.textPrimary)
                     .lineLimit(2)
                     .multilineTextAlignment(.leading)
 
                 // Location & Time
                 Text("\(product.creator) · \(relativeTime(from: product.createdAt))")
-                    .font(.system(size: 13, weight: .regular))
+                    .font(.caption)
                     .foregroundColor(Theme.Colors.textSecondary)
                     .lineLimit(1)
 
                 // Price
-                Text(formatPrice(product.priceCents))
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundColor(Theme.Colors.textPrimary)
-                    .padding(.top, 2)
+                HStack(spacing: Theme.Spacing.xs) {
+                    Text(formatPrice(product.priceCents))
+                        .font(.headline)
+                        .foregroundColor(product.status == "SOLD_OUT" ? Theme.Colors.textSecondary : Theme.Colors.textPrimary)
+                        .strikethrough(product.status == "SOLD_OUT", color: Theme.Colors.textSecondary)
+                        .padding(.top, 2)
+
+                    if product.status == "SOLD_OUT" {
+                        Text("판매완료")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.gray)
+                            .clipShape(Capsule())
+                    }
+                }
 
                 Spacer(minLength: 0)
 
@@ -104,7 +118,7 @@ struct ProductListRow: View {
                         Text("\(product.likes)")
                     }
                 }
-                .font(.system(size: 13))
+                .font(.caption)
                 .foregroundColor(Theme.Colors.textSecondary)
             }
             .padding(.vertical, 4)
@@ -112,6 +126,9 @@ struct ProductListRow: View {
         .padding(.vertical, Theme.Spacing.md)
         .padding(.horizontal, Theme.Spacing.lg)
         .background(Theme.Colors.bgPrimary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(product.title), \(formatPrice(product.priceCents)), 관심 \(product.likes)개, 채팅 \(product.chatCount)개")
+        .accessibilityHint("상품 상세 화면으로 이동합니다.")
     }
 }
 

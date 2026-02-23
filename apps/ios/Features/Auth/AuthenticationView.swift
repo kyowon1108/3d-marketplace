@@ -93,7 +93,7 @@ struct AuthenticationView: View {
                         HStack(spacing: Theme.Spacing.sm) {
                             Image(systemName: "g.circle.fill")
                                 .font(.system(size: 20))
-                            Text("Google로 계속하기")
+                            Text("Google로 계속하기 (준비 중)")
                                 .font(.subheadline)
                                 .fontWeight(.medium)
                         }
@@ -103,6 +103,8 @@ struct AuthenticationView: View {
                         .glassCardStyle()
                         .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
                     }
+                    .accessibilityLabel("Google 로그인, 준비 중")
+                    .accessibilityHint("현재는 개발용 로그인만 지원됩니다.")
 
                     // Toggle Mode
                     Button(action: {
