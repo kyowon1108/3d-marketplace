@@ -78,11 +78,11 @@ public class SellNewViewModel {
         case .idle:
             break
         case .building(let progress, let status):
-            self.processingProgress = progress
+            self.processingProgress = progress * 0.7
             self.processingStatusText = status
         case .completed(let url):
             self.generatedModelURL = url
-            self.processingProgress = 1.0
+            self.processingProgress = 0.7
             self.processingStatusText = "3D 모델 완성!"
             Task {
                 try? await Task.sleep(nanoseconds: 500_000_000)
@@ -102,7 +102,7 @@ public class SellNewViewModel {
     }
 
     public func startUpload() {
-        self.processingProgress = 0.0
+        self.processingProgress = 0.7
         self.processingStatusText = "업로드 서버에 자리 만드는 중..."
         self.uploadError = nil
 
@@ -115,8 +115,8 @@ public class SellNewViewModel {
                 let fileData = try Data(contentsOf: modelURL)
                 let fileSize = fileData.count
 
-                self.processingStatusText = "업로드 서버에 자리 만드는 중..."
-                self.processingProgress = 0.1
+                self.processingStatusText = "업로드 공간 확보 중..."
+                self.processingProgress = 0.72
 
                 // 썸네일 생성 시도: QLThumbnailGenerator → SceneKit fallback
                 var thumbnailData: Data? = nil
@@ -159,7 +159,7 @@ public class SellNewViewModel {
                 }
 
                 let initRequest = UploadInitRequest(
-                    dims_source: "ios_object_capture",
+                    dims_source: "ios_lidar",
                     dims_width: nil,
                     dims_height: nil,
                     dims_depth: nil,
@@ -179,7 +179,7 @@ public class SellNewViewModel {
                 #endif
 
                 self.uploadedAssetId = initResponse.asset_id
-                self.processingProgress = 0.2
+                self.processingProgress = 0.75
 
                 guard let presigned = initResponse.presigned_uploads.first else {
                     throw UploadError.noPresignedURL
@@ -205,12 +205,12 @@ public class SellNewViewModel {
                     )
                 }
 
-                self.processingProgress = 0.8
+                self.processingProgress = 0.9
                 #if DEBUG
                 print("[Upload] Step 2: Upload OK")
                 #endif
 
-                self.processingStatusText = "업로드된 파일이 안전한지 확인하는 중..."
+                self.processingStatusText = "파일 안전성 검증 중..."
                 let sha256 = SHA256.hash(data: fileData)
                 let checksumHex = sha256.compactMap { String(format: "%02x", $0) }.joined()
                 

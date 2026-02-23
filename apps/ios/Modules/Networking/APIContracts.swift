@@ -182,7 +182,7 @@ struct TokenRefreshResponse: Decodable {
     let access_token: String
     let token_type: String
     let refresh_token: String?
-    let user: AuthUserResponse
+    let expires_in: Int?
 }
 
 struct LogoutRequest: Encodable {

@@ -19,7 +19,7 @@ final class WebSocketManager: @unchecked Sendable {
     var onMessage: ((ChatWsMessage) -> Void)?
     var onStateChange: ((ConnectionState) -> Void)?
 
-    private let baseURL = "ws://100.95.177.6:8000/v1"
+    private let baseURL = AppEnvironment.current.wsBaseURL
 
     func connect(roomId: String, token: String) {
         guard state == .disconnected || state == .reconnecting else { return }

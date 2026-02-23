@@ -1,0 +1,15 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="ringGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="60%" style="stop-color:#35D7FF;stop-opacity:0"/>
+      <stop offset="85%" style="stop-color:#35D7FF;stop-opacity:0.4"/>
+      <stop offset="95%" style="stop-color:#7C4DFF;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#35D7FF;stop-opacity:0"/>
+    </radialGradient>
+  </defs>
+  <ellipse cx="512" cy="512" rx="420" ry="160" fill="none" stroke="url(#ringGlow)" stroke-width="30"/>
+  <ellipse cx="512" cy="512" rx="460" ry="180" fill="none" stroke="#53F2C3" stroke-width="4" stroke-opacity="0.5" stroke-dasharray="10 30"/>
+  <path d="M932,512 A420,160 0 0,1 512,672" fill="none" stroke="#EAF0FF" stroke-width="8" stroke-linecap="round" opacity="0.8"/>
+  <circle cx="152" cy="512" r="8" fill="#53F2C3"/>
+  <circle cx="932" cy="512" r="6" fill="#35D7FF"/>
+</svg>

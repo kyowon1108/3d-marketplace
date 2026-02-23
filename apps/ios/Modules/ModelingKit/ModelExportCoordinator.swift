@@ -71,9 +71,8 @@ public struct ModelExportCoordinator {
         }
     }
 
-    /// GLB export — placeholder for future implementation.
+    /// GLB export — deferred (USDZ-only in beta).
     public func exportGLB(from usdzURL: URL, to outputURL: URL) async throws {
-        // Future: SceneKit → GLB conversion
         throw ExportError.glbNotSupported
     }
 
@@ -83,7 +82,7 @@ public struct ModelExportCoordinator {
         public var errorDescription: String? {
             switch self {
             case .glbNotSupported:
-                return "GLB export is not yet supported."
+                return "GLB 내보내기는 아직 지원하지 않습니다."
             }
         }
     }

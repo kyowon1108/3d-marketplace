@@ -19,9 +19,8 @@ targets:
       - path: DesignSystem
       - path: Features
       - path: Modules
-      - path: Shared
-    resources:
       - path: Resources/Assets.xcassets
+      - path: Shared
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: kapr.marketplace.app

@@ -103,7 +103,7 @@ struct ProductListView: View {
                 self.isLoading = false
                 NotificationCenter.default.post(
                     name: .showToast,
-                    object: Toast(message: (error as? APIError)?.userMessage ?? "탐색 테이터 불러오기 실패", style: .error)
+                    object: Toast(message: (error as? APIError)?.userMessage ?? "탐색 데이터 불러오기 실패", style: .error)
                 )
             }
         }

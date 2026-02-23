@@ -19,12 +19,40 @@ struct NativeCaptureView: View {
                         .onAppear { engine.start() }
 
                 case .ready(let session):
-                    ObjectCaptureView(session: session)
-                        .ignoresSafeArea()
-
-                    VStack {
-                        Spacer()
-                        captureControls(session: session)
+                    ZStack {
+                        ObjectCaptureView(session: session)
+                            .ignoresSafeArea()
+                            .task {
+                                for await state in session.stateUpdates {
+                                    if case .completed = state {
+                                        viewModel.capturedFolderURL = engine.imagesDirectory
+                                        viewModel.finishCaptureAndStartModeling()
+                                    }
+                                }
+                            }
+                        
+                        VStack {
+                            HStack {
+                                Spacer()
+                                Button(action: {
+                                    engine.cancel()
+                                    viewModel.reset()
+                                }) {
+                                    Image(systemName: "xmark.circle.fill")
+                                        .font(.system(size: 30))
+                                        .foregroundColor(Color.white.opacity(0.8))
+                                        .background(Circle().fill(Color.black.opacity(0.4)))
+                                }
+                                .padding()
+                                .padding(.top, 40)
+                            }
+                            Spacer()
+                        }
+                        
+                        VStack {
+                            Spacer()
+                            captureControls(session: session)
+                        }
                     }
 
                 case .failed(let message):
@@ -58,24 +86,23 @@ struct NativeCaptureView: View {
     @ViewBuilder
     private func captureControls(session: ObjectCaptureSession) -> some View {
         HStack(spacing: Theme.Spacing.xl) {
-            Button("Cancel") {
-                engine.cancel()
-                viewModel.reset()
-            }
-            .foregroundColor(.white)
-
             if case .ready = session.state {
                 Button(action: { _ = session.startDetecting() }) {
-                    Image(systemName: "viewfinder.circle.fill")
-                        .font(.system(size: 70))
-                        .foregroundColor(Theme.Colors.violetAccent)
-                        .shadow(color: Theme.Colors.neonGlow, radius: 10)
+                    Text("계속하기")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 24)
+                        .padding(.vertical, 14)
+                        .background(Theme.Colors.violetAccent)
+                        .clipShape(Capsule())
                 }
             } else if case .detecting = session.state {
                 Button(action: { session.startCapturing() }) {
                     Image(systemName: "record.circle")
                         .font(.system(size: 70))
                         .foregroundColor(.red)
+                        .background(Circle().fill(Color.white))
+                        .clipShape(Circle())
                 }
             } else if case .capturing = session.state {
                 if isFinalizingCapture {
@@ -86,29 +113,13 @@ struct NativeCaptureView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .font(.system(size: 70))
                             .foregroundColor(.green)
+                            .background(Circle().fill(Color.white))
+                            .clipShape(Circle())
                     }
                 }
-            } else {
-                ProgressView()
-                    .tint(.white)
             }
-
-            Button("수동") {
-                // Manual capture toggle placeholder
-            }
-            .foregroundColor(.white)
         }
-        .padding(.bottom, 40)
-        .background(
-            VStack {
-                Spacer()
-                Rectangle()
-                    .fill(Theme.Colors.bgPrimary.opacity(0.8))
-                    .frame(height: 120)
-                    .blur(radius: 20)
-            }
-            .ignoresSafeArea()
-        )
+        .padding(.bottom, 60)
     }
 
     private func finalizeCapture() {
@@ -119,8 +130,6 @@ struct NativeCaptureView: View {
         Task {
             do {
                 try await engine.finishAndAwaitCompletion()
-                viewModel.capturedFolderURL = engine.imagesDirectory
-                viewModel.finishCaptureAndStartModeling()
             } catch {
                 isFinalizingCapture = false
                 shouldCancelOnDisappear = true

@@ -125,7 +125,7 @@ struct AuthenticationView: View {
     private func handleGoogleSignIn() {
         isLoading = true
         // Use ASWebAuthenticationSession to initiate Google OAuth flow
-        guard URL(string: "http://100.95.177.6:8000/v1/auth/oauth/google/authorize") != nil else {
+        guard URL(string: "\(AppEnvironment.current.apiBaseURL)/auth/oauth/google/authorize") != nil else {
             isLoading = false
             return
         }
@@ -136,7 +136,7 @@ struct AuthenticationView: View {
                 // Real implementation: ASWebAuthenticationSession → callback → exchange code
                 NotificationCenter.default.post(
                     name: .showToast,
-                    object: Toast(message: "Google 로그인은 실제 기기에서만 지원됩니다.", style: .info)
+                    object: Toast(message: "Google 로그인은 준비 중입니다.", style: .info)
                 )
                 isLoading = false
             }

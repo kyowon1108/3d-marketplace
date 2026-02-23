@@ -1,0 +1,41 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="cloudGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#EAF0FF;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#35D7FF;stop-opacity:0.2"/>
+    </linearGradient>
+    <linearGradient id="dataStream" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#7C4DFF;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#35D7FF;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#53F2C3;stop-opacity:0"/>
+    </linearGradient>
+    <linearGradient id="cloudAcc" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#53F2C3;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#7C4DFF;stop-opacity:0.4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Refined Isometric Cloud Node (Top) -->
+  <polygon points="512,180 750,300 750,420 512,540 274,420 274,300" fill="url(#cloudGrad)" stroke="#35D7FF" stroke-width="4" stroke-linejoin="round"/>
+  
+  <!-- Cloud Inner Topology -->
+  <polygon points="512,180 750,300 512,420 274,300" fill="url(#cloudAcc)" opacity="0.4" stroke="#EAF0FF" stroke-width="3" stroke-linejoin="round"/>
+  <polygon points="274,300 512,420 512,540 274,420" fill="#35D7FF" opacity="0.4" stroke="#35D7FF" stroke-width="2" stroke-linejoin="round"/>
+  <polygon points="512,420 750,300 750,420 512,540" fill="#7C4DFF" opacity="0.3" stroke="#53F2C3" stroke-width="2" stroke-linejoin="round"/>
+
+  <!-- Upload Data Streaks -->
+  <rect x="440" y="480" width="20" height="250" fill="url(#dataStream)" rx="10" />
+  <rect x="490" y="380" width="40" height="320" fill="url(#dataStream)" rx="20" opacity="0.9" />
+  <rect x="560" y="450" width="16" height="220" fill="url(#dataStream)" rx="8" opacity="0.7" />
+  <rect x="610" y="540" width="12" height="150" fill="url(#dataStream)" rx="6" opacity="0.5" />
+  <rect x="390" y="500" width="12" height="180" fill="url(#dataStream)" rx="6" opacity="0.6" />
+
+  <!-- Base Data Capsule (Transmitting) -->
+  <polygon points="512,650 630,710 512,770 394,710" fill="#35D7FF" opacity="0.8" stroke="#EAF0FF" stroke-width="4" stroke-linejoin="round"/>
+  <polygon points="394,710 512,770 512,890 394,830" fill="#7C4DFF" opacity="0.7" stroke="#35D7FF" stroke-width="4" stroke-linejoin="round"/>
+  <polygon points="512,770 630,710 630,830 512,890" fill="#1B0A40" opacity="0.6" stroke="#53F2C3" stroke-width="4" stroke-linejoin="round"/>
+
+  <circle cx="450" cy="500" r="8" fill="#53F2C3"/>
+  <circle cx="580" cy="550" r="6" fill="#EAF0FF"/>
+  <circle cx="510" cy="380" r="10" fill="#35D7FF"/>
+</svg>

@@ -70,14 +70,16 @@ struct ProductDetailView: View {
                             .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
                     }
                     Spacer()
-                    Button(action: {}) {
-                        Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundColor(Theme.Colors.textPrimary)
-                            .frame(width: 40, height: 40)
-                            .background(Color.black.opacity(0.4))
-                            .clipShape(Circle())
-                            .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    if let product = productDetail, let url = URL(string: "3dmarket://products/\(product.id)") {
+                        ShareLink(item: url) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 18, weight: .bold))
+                                .foregroundColor(Theme.Colors.textPrimary)
+                                .frame(width: 40, height: 40)
+                                .background(Color.black.opacity(0.4))
+                                .clipShape(Circle())
+                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                        }
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.md)
@@ -133,7 +135,7 @@ struct ProductDetailView: View {
                                 .foregroundColor(Theme.Colors.violetAccent.opacity(0.8))
                                 .shadow(color: Theme.Colors.violetAccent.opacity(0.3), radius: 10)
                             
-                            Text("3D 모델 랜더링 준비됨")
+                            Text("3D 모델 렌더링 준비됨")
                                 .font(.headline)
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
@@ -633,7 +635,9 @@ private struct Inline3DPreview: View {
                     self.scene = loadedScene
                 }
             } catch {
+                #if DEBUG
                 print("Failed to load scene: \(error)")
+                #endif
             }
         }
     }

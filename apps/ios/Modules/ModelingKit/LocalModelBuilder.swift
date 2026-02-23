@@ -163,7 +163,7 @@ public class LocalModelBuilder {
         }
     }
 
-    // MARK: - Mock (simulator / unsupported device)
+    // MARK: - Simulator fallback (non-LiDAR device)
 
     private func buildMock(outputURL: URL) async throws {
         let steps: [(Double, String)] = [

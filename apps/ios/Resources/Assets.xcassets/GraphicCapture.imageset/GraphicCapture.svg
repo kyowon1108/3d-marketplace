@@ -1,0 +1,45 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="glassTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EAF0FF;stop-opacity:0.6"/>
+      <stop offset="100%" style="stop-color:#35D7FF;stop-opacity:0.1"/>
+    </linearGradient>
+    <linearGradient id="glassLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#35D7FF;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#0088FF;stop-opacity:0.2"/>
+    </linearGradient>
+    <linearGradient id="glassRight" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C4DFF;stop-opacity:0.4"/>
+      <stop offset="100%" style="stop-color:#1B0A40;stop-opacity:0.1"/>
+    </linearGradient>
+    <linearGradient id="scanBeam" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#53F2C3;stop-opacity:0"/>
+      <stop offset="50%" style="stop-color:#53F2C3;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#53F2C3;stop-opacity:0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background Glow & Grid -->
+  <circle cx="512" cy="512" r="300" fill="#35D7FF" opacity="0.05" />
+  <path d="M512 750 L800 600 L512 450 L224 600 Z" fill="none" stroke="#7C4DFF" stroke-width="2" stroke-opacity="0.3" />
+  <path d="M512 850 L850 670 L512 490 L174 670 Z" fill="none" stroke="#35D7FF" stroke-width="2" stroke-opacity="0.2" stroke-dasharray="10 15" />
+  
+  <!-- Back Edges -->
+  <path d="M512 480 L344 390 M512 480 L680 390 M512 480 L512 680" stroke="#EAF0FF" stroke-width="2" stroke-opacity="0.7"/>
+
+  <!-- Isometric Glass Cube -->
+  <polygon points="512,300 680,390 512,480 344,390" fill="url(#glassTop)" stroke="#EAF0FF" stroke-width="3" stroke-opacity="0.8" stroke-linejoin="round"/>
+  <polygon points="344,390 512,480 512,680 344,590" fill="url(#glassLeft)" stroke="#35D7FF" stroke-width="3" stroke-opacity="0.6" stroke-linejoin="round"/>
+  <polygon points="512,480 680,390 680,590 512,680" fill="url(#glassRight)" stroke="#7C4DFF" stroke-width="3" stroke-opacity="0.5" stroke-linejoin="round"/>
+
+  <!-- Scanning Arcs and Sweeps -->
+  <ellipse cx="512" cy="530" rx="300" ry="120" fill="none" stroke="#53F2C3" stroke-width="4" stroke-opacity="0.8" />
+  <ellipse cx="512" cy="530" rx="300" ry="120" fill="none" stroke="url(#scanBeam)" stroke-width="12" stroke-opacity="0.7" stroke-dasharray="100 800" transform="rotate(30 512 530)"/>
+  
+  <!-- Depth Points -->
+  <circle cx="344" cy="390" r="8" fill="#FFD166" />
+  <circle cx="680" cy="390" r="8" fill="#35D7FF" />
+  <circle cx="512" cy="680" r="8" fill="#53F2C3" />
+  <circle cx="512" cy="300" r="10" fill="#EAF0FF" />
+  <circle cx="300" cy="530" r="6" fill="#35D7FF" />
+  <circle cx="750" cy="530" r="6" fill="#53F2C3" />
+</svg>

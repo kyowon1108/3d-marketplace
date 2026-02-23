@@ -1,0 +1,37 @@
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="solidFace" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#35D7FF;stop-opacity:0.9"/>
+      <stop offset="100%" style="stop-color:#7C4DFF;stop-opacity:0.6"/>
+    </linearGradient>
+    <linearGradient id="wireGlow" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#53F2C3;stop-opacity:0.8"/>
+      <stop offset="100%" style="stop-color:#EAF0FF;stop-opacity:0.2"/>
+    </linearGradient>
+  </defs>
+  <!-- Ambient background grid / Holographic ring -->
+  <ellipse cx="512" cy="650" rx="350" ry="120" fill="none" stroke="#7C4DFF" stroke-width="2" stroke-dasharray="10 15" opacity="0.6"/>
+  <ellipse cx="512" cy="650" rx="200" ry="70" fill="none" stroke="#35D7FF" stroke-width="3" stroke-dasharray="5 10" opacity="0.8"/>
+
+  <!-- Left Side: Point cloud forming wireframe triangles -->
+  <polygon points="320,420 512,530 512,750 320,640" fill="none" stroke="url(#wireGlow)" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M320,420 L512,750 M320,640 L416,475 L512,750 M320,530 L512,640" fill="none" stroke="url(#wireGlow)" stroke-width="2" stroke-dasharray="8 8"/>
+  <circle cx="320" cy="420" r="8" fill="#53F2C3" />
+  <circle cx="512" cy="750" r="10" fill="#35D7FF" />
+  <circle cx="320" cy="640" r="8" fill="#53F2C3" />
+  <circle cx="416" cy="475" r="6" fill="#EAF0FF" />
+  <circle cx="250" cy="450" r="6" fill="#7C4DFF" opacity="0.8"/>
+  <circle cx="150" cy="550" r="4" fill="#35D7FF" opacity="0.6"/>
+
+  <!-- Right Side & Top: Solidifying Brushed Metal -->
+  <polygon points="512,310 704,420 512,530 320,420" fill="url(#solidFace)" stroke="#EAF0FF" stroke-width="4" stroke-linejoin="round"/>
+  <polygon points="512,530 704,420 704,640 512,750" fill="url(#solidFace)" stroke="#35D7FF" stroke-width="4" stroke-linejoin="round"/>
+  
+  <!-- Highlights -->
+  <polygon points="512,320 680,415 512,510 344,415" fill="#EAF0FF" opacity="0.15" />
+  <polygon points="522,540 680,445 680,620 522,720" fill="#35D7FF" opacity="0.1" />
+
+  <!-- Center highlight (joining point) -->
+  <circle cx="512" cy="530" r="12" fill="#FFD166" />
+  <circle cx="512" cy="530" r="24" fill="none" stroke="#FFD166" stroke-width="4" opacity="0.6"/>
+</svg>

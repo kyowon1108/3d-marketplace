@@ -23,7 +23,7 @@ struct NativeCaptureViewMock: View {
             
             VStack {
                 // Coachmark (HIG)
-                Text("Slowly move around the object")
+                Text("물체 주위를 천천히 돌아주세요")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(Theme.Colors.textPrimary)
                     .padding(.horizontal, Theme.Spacing.md)
@@ -37,7 +37,7 @@ struct NativeCaptureViewMock: View {
                 
                 // Bottom Controls
                 HStack(spacing: Theme.Spacing.xl) {
-                    Button("Cancel") {
+                    Button("취소") {
                         viewModel.reset()
                     }
                     .foregroundColor(Theme.Colors.textSecondary)
@@ -50,8 +50,8 @@ struct NativeCaptureViewMock: View {
                             .foregroundColor(.white)
                     }
                     
-                    Button("Manual") {
-                        // Manual capture mode
+                    Button("수동") {
+                        // 수동 캡처 모드 (베타 미지원)
                     }
                     .foregroundColor(Theme.Colors.textSecondary)
                 }

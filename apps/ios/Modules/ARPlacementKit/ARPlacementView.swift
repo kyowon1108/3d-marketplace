@@ -90,7 +90,9 @@ struct ARPlacementView: UIViewRepresentable {
                     guard let self else { return }
                     self.isLoadingModel = false
                     if case .failure(let error) = completion {
+                        #if DEBUG
                         print("Failed to preload AR model: \(error)")
+                        #endif
                         self.onError?("AR 모델 로딩에 실패했습니다. Quick Look으로 다시 시도해주세요.")
                     }
                 } receiveValue: { [weak self] model in

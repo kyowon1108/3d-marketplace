@@ -22,7 +22,7 @@ enum APIError: Error {
 
 final class APIClient: @unchecked Sendable {
     static let shared = APIClient()
-    private let baseURL = "http://100.95.177.6:8000/v1"
+    private let baseURL = AppEnvironment.current.apiBaseURL
 
     // Dynamic Auth Token
     private var authToken: String?
@@ -176,14 +176,14 @@ final class APIClient: @unchecked Sendable {
         guard let (data, response) = try? await URLSession.shared.data(for: request),
               let httpResponse = response as? HTTPURLResponse,
               (200...299).contains(httpResponse.statusCode),
-              let tokenResponse = try? JSONDecoder().decode(AuthTokenResponse.self, from: data) else {
+              let tokenResponse = try? JSONDecoder().decode(TokenRefreshResponse.self, from: data) else {
             return nil
         }
 
         // Save new tokens
         AuthManager.shared.saveTokens(
             accessToken: tokenResponse.access_token,
-            refreshToken: tokenResponse.refresh_token
+            refreshToken: tokenResponse.refresh_token ?? refreshToken
         )
         return tokenResponse.access_token
     }
