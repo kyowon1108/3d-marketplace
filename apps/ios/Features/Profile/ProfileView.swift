@@ -30,9 +30,13 @@ struct ProfileView: View {
                                     .fontWeight(.bold)
                                     .foregroundColor(Theme.Colors.textPrimary)
                                 if let location = authManager.currentUser?.location_name, !location.isEmpty {
-                                    Text(location)
-                                        .font(.subheadline)
-                                        .foregroundColor(Theme.Colors.textSecondary)
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "mappin.and.ellipse")
+                                            .font(.system(size: 11))
+                                        Text(location)
+                                    }
+                                    .font(.subheadline)
+                                    .foregroundColor(Theme.Colors.textSecondary)
                                 }
                             }
 

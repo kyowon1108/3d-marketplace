@@ -99,6 +99,14 @@ struct ProductListRow: View {
                             .padding(.vertical, 2)
                             .background(Color.gray)
                             .clipShape(Capsule())
+                    } else if product.status == "RESERVED" {
+                        Text("예약중")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green.opacity(0.9))
+                            .clipShape(Capsule())
                     }
                 }
 
@@ -126,6 +134,7 @@ struct ProductListRow: View {
         .padding(.vertical, Theme.Spacing.md)
         .padding(.horizontal, Theme.Spacing.lg)
         .background(Theme.Colors.bgPrimary)
+        .opacity(product.status == "SOLD_OUT" ? 0.5 : 1.0)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(product.title), \(formatPrice(product.priceCents)), 관심 \(product.likes)개, 채팅 \(product.chatCount)개")
         .accessibilityHint("상품 상세 화면으로 이동합니다.")

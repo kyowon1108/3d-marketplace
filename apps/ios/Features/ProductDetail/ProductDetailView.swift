@@ -79,15 +79,31 @@ struct ProductDetailView: View {
                             .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
                     }
                     Spacer()
-                    if let product = productDetail, let url = URL(string: "3dmarket://products/\(product.id)") {
-                        ShareLink(item: url) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(Theme.Colors.textPrimary)
-                                .frame(width: 40, height: 40)
-                                .background(Color.black.opacity(0.4))
-                                .clipShape(Circle())
-                                .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                    if let product = productDetail {
+                        HStack(spacing: Theme.Spacing.sm) {
+                            if let url = URL(string: "3dmarket://products/\(product.id)") {
+                                ShareLink(item: url) {
+                                    Image(systemName: "square.and.arrow.up")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(Theme.Colors.textPrimary)
+                                        .frame(width: 40, height: 40)
+                                        .background(Color.black.opacity(0.4))
+                                        .clipShape(Circle())
+                                        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                }
+                            }
+                            
+                            if authManager.isAuthenticated, authManager.currentUser?.id == product.seller_id {
+                                Button(action: { showSellerActions = true }) {
+                                    Image(systemName: "ellipsis")
+                                        .font(.system(size: 18, weight: .bold))
+                                        .foregroundColor(Theme.Colors.textPrimary)
+                                        .frame(width: 40, height: 40)
+                                        .background(Color.black.opacity(0.4))
+                                        .clipShape(Circle())
+                                        .overlay(Circle().stroke(Color.white.opacity(0.2), lineWidth: 1))
+                                }
+                            }
                         }
                     }
                 }
@@ -298,9 +314,13 @@ struct ProductDetailView: View {
                 Text(productDetail?.seller_name ?? "알 수 없는 판매자")
                     .font(.system(size: 16, weight: .bold))
                     .foregroundColor(Theme.Colors.textPrimary)
-                Text(productDetail?.seller_location_name ?? "지역 정보 없음")
-                    .font(.system(size: 13))
-                    .foregroundColor(Theme.Colors.textSecondary)
+                HStack(spacing: 4) {
+                    Image(systemName: "mappin.and.ellipse")
+                        .font(.system(size: 11))
+                    Text(productDetail?.seller_location_name ?? "지역 정보 없음")
+                }
+                .font(.system(size: 13))
+                .foregroundColor(Theme.Colors.textSecondary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -511,20 +531,12 @@ struct ProductDetailView: View {
                         .accessibilityHint(product.status == "SOLD_OUT" ? "이미 판매가 완료된 상품입니다." : "구매를 확인하고 결제를 진행합니다.")
                     }
                 } else if authManager.isAuthenticated {
-                    // Seller management button
-                    Button(action: { showSellerActions = true }) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "ellipsis.circle")
-                                .font(.system(size: 16))
-                            Text("관리")
-                        }
-                        .font(.subheadline.weight(.bold))
-                        .foregroundColor(Theme.Colors.textPrimary)
-                        .padding(.horizontal, 20)
+                    // Soft reminder for seller
+                    Text("내가 등록한 상품입니다")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundColor(Theme.Colors.textSecondary)
+                        .padding(.horizontal, 16)
                         .padding(.vertical, 12)
-                        .background(Theme.Colors.bgSecondary)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
