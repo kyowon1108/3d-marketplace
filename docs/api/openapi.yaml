@@ -183,6 +183,100 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+    patch:
+      operationId: updateProduct
+      summary: Update product fields (title, description, price)
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdateRequest"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+    delete:
+      operationId: deleteProduct
+      summary: Soft-delete a product
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "204":
+          description: Product deleted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /v1/products/{id}/status:
+    patch:
+      operationId: changeProductStatus
+      summary: Change product status (FOR_SALE, RESERVED, SOLD_OUT)
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusChangeRequest"
+      responses:
+        "200":
+          description: Status changed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /v1/products/{id}/like:
     post:
       operationId: toggleProductLike
@@ -414,6 +508,33 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /v1/ai/suggest-listing:
+    post:
+      operationId: aiSuggestListing
+      summary: AI-powered listing title and description suggestion
+      tags: [ai]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AISuggestListingRequest"
+      responses:
+        "200":
+          description: AI suggestion generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AISuggestListingResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "502":
+          description: AI service error
+        "503":
+          description: AI service not configured
+
   /v1/auth/providers:
     get:
       operationId: getAuthProviders
@@ -534,6 +655,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+    patch:
+      operationId: updateCurrentUser
+      summary: Update current user profile (name, location)
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdateRequest"
+      responses:
+        "200":
+          description: Profile updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -1007,11 +1152,90 @@ components:
           type: string
           enum: [high, medium, low]
           nullable: true
+        dims_width:
+          type: number
+          format: float
+          nullable: true
+          description: Width in centimeters
+        dims_height:
+          type: number
+          format: float
+          nullable: true
+          description: Height in centimeters
+        dims_depth:
+          type: number
+          format: float
+          nullable: true
+          description: Depth in centimeters
       required:
         - availability
         - files
 
+    # --- AI Suggest ---
+    AISuggestListingRequest:
+      type: object
+      properties:
+        thumbnail_url:
+          type: string
+          format: uri
+        dims_width:
+          type: number
+          format: float
+          nullable: true
+        dims_height:
+          type: number
+          format: float
+          nullable: true
+        dims_depth:
+          type: number
+          format: float
+          nullable: true
+        dims_source:
+          type: string
+          nullable: true
+      required:
+        - thumbnail_url
+
+    AISuggestListingResponse:
+      type: object
+      properties:
+        suggested_title:
+          type: string
+        suggested_description:
+          type: string
+      required:
+        - suggested_title
+        - suggested_description
+
     # --- Product ---
+    ProductUpdateRequest:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+          nullable: true
+        price_cents:
+          type: integer
+
+    StatusChangeRequest:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/ProductStatus"
+      required:
+        - status
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        location_name:
+          type: string
+          nullable: true
+
     PublishRequest:
       type: object
       properties:

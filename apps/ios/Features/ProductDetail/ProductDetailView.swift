@@ -33,6 +33,13 @@ struct ProductDetailView: View {
     @State private var showPurchaseConfirmation = false
     @State private var isPurchasing = false
 
+    // Seller management
+    @State private var showSellerActions = false
+    @State private var showDeleteConfirmation = false
+    @State private var showStatusPicker = false
+    @State private var showEditView = false
+    @State private var isDeleting = false
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Theme.Colors.bgPrimary.ignoresSafeArea()
@@ -116,6 +123,39 @@ struct ProductDetailView: View {
         } message: {
             if let product = productDetail {
                 Text("\(product.title)을(를) 구매하면 판매완료 처리됩니다.")
+            }
+        }
+        .confirmationDialog("상품 관리", isPresented: $showSellerActions, titleVisibility: .visible) {
+            Button("수정하기") { showEditView = true }
+            Button("상태 변경") { showStatusPicker = true }
+            Button("삭제하기", role: .destructive) { showDeleteConfirmation = true }
+            Button("취소", role: .cancel) {}
+        }
+        .confirmationDialog("정말 삭제하시겠어요?", isPresented: $showDeleteConfirmation, titleVisibility: .visible) {
+            Button("삭제", role: .destructive) { deleteProduct() }
+            Button("취소", role: .cancel) {}
+        } message: {
+            Text("삭제된 상품은 복구할 수 없습니다.")
+        }
+        .confirmationDialog("상태 변경", isPresented: $showStatusPicker, titleVisibility: .visible) {
+            if productDetail?.status != "FOR_SALE" {
+                Button("판매중으로 변경") { changeStatus("FOR_SALE") }
+            }
+            if productDetail?.status != "RESERVED" {
+                Button("예약중으로 변경") { changeStatus("RESERVED") }
+            }
+            if productDetail?.status != "SOLD_OUT" {
+                Button("판매완료로 변경") { changeStatus("SOLD_OUT") }
+            }
+            Button("취소", role: .cancel) {}
+        }
+        .sheet(isPresented: $showEditView) {
+            if let product = productDetail {
+                NavigationStack {
+                    ProductEditView(product: product) { updated in
+                        self.productDetail = updated
+                    }
+                }
             }
         }
         .tutorialModal(
@@ -321,8 +361,45 @@ struct ProductDetailView: View {
                 .foregroundColor(Theme.Colors.textSecondary)
                 .padding(.top, Theme.Spacing.md)
 
-                // Trust metrics
-                if let dimsTrust = arAsset?.dims_trust {
+                // Dimensions card
+                if let dimsText = arAsset?.formattedDimsCm {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "ruler")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Theme.Colors.violetAccent)
+                            Text("실측 치수")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundColor(Theme.Colors.textPrimary)
+                        }
+
+                        Text(dimsText)
+                            .font(.system(size: 20, weight: .bold, design: .monospaced))
+                            .foregroundColor(Theme.Colors.textPrimary)
+
+                        // Trust badge
+                        if let dimsTrust = arAsset?.dims_trust {
+                            HStack(spacing: 4) {
+                                Image(systemName: dimsTrust == "high" ? "checkmark.seal.fill" : "info.circle")
+                                    .font(.system(size: 11))
+                                    .foregroundColor(dimsTrust == "high" ? .green : .orange)
+                                Text(dimsTrust == "high" ? "LiDAR 정밀 측정 (±1cm)" : "수동 측정 (오차 가능)")
+                                    .font(.system(size: 12, weight: .medium))
+                                    .foregroundColor(Theme.Colors.textSecondary)
+                            }
+                        }
+                    }
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.Colors.bgSecondary)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(Theme.Colors.violetAccent.opacity(0.2), lineWidth: 1)
+                    )
+                    .padding(.top, Theme.Spacing.sm)
+                } else if let dimsTrust = arAsset?.dims_trust {
+                    // Fallback: show trust badge only (no dims available)
                     HStack(spacing: 6) {
                         Image(systemName: dimsTrust == "high" ? "checkmark.seal.fill" : "info.circle")
                             .font(.system(size: 12))
@@ -434,13 +511,20 @@ struct ProductDetailView: View {
                         .accessibilityHint(product.status == "SOLD_OUT" ? "이미 판매가 완료된 상품입니다." : "구매를 확인하고 결제를 진행합니다.")
                     }
                 } else if authManager.isAuthenticated {
-                    Text("내 상품")
+                    // Seller management button
+                    Button(action: { showSellerActions = true }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "ellipsis.circle")
+                                .font(.system(size: 16))
+                            Text("관리")
+                        }
                         .font(.subheadline.weight(.bold))
                         .foregroundColor(Theme.Colors.textPrimary)
                         .padding(.horizontal, 20)
                         .padding(.vertical, 12)
                         .background(Theme.Colors.bgSecondary)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
+                    }
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
@@ -458,6 +542,7 @@ struct ProductDetailView: View {
                     ARPlacementView(
                         modelURL: modelURL,
                         wallSnapEnabled: $wallSnapEnabled,
+                        dims: arAssetDimensions,
                         onDismiss: { isArPresented = false },
                         onError: { message in
                             NotificationCenter.default.post(
@@ -509,6 +594,15 @@ struct ProductDetailView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Computed
+
+    /// Converts ArAssetResponse dims (cm) to ModelDimensions (meters) for AR overlay.
+    private var arAssetDimensions: ModelDimensions? {
+        guard let w = arAsset?.dims_width, let h = arAsset?.dims_height, let d = arAsset?.dims_depth,
+              w > 0, h > 0, d > 0 else { return nil }
+        return ModelDimensions(width: w / 100.0, height: h / 100.0, depth: d / 100.0)
     }
 
     // MARK: - Helpers
@@ -743,6 +837,51 @@ struct ProductDetailView: View {
                     }
 
                     AppToast(message: (error as? APIError)?.userMessage ?? "구매 처리에 실패했습니다.", style: .error)
+                }
+            }
+        }
+    }
+
+    private func deleteProduct() {
+        isDeleting = true
+        Task {
+            do {
+                let _: EmptyResponse = try await APIClient.shared.request(
+                    endpoint: "/products/\(productId.uuidString)",
+                    method: "DELETE"
+                )
+                await MainActor.run {
+                    isDeleting = false
+                    AppToast(message: "상품이 삭제되었습니다.", style: .success)
+                    dismiss()
+                }
+            } catch {
+                await MainActor.run {
+                    isDeleting = false
+                    AppToast(message: (error as? APIError)?.userMessage ?? "삭제에 실패했습니다.", style: .error)
+                }
+            }
+        }
+    }
+
+    private func changeStatus(_ newStatus: String) {
+        Task {
+            do {
+                let request = StatusChangeRequest(status: newStatus)
+                let body = try JSONEncoder().encode(request)
+                let response: ProductResponse = try await APIClient.shared.request(
+                    endpoint: "/products/\(productId.uuidString)/status",
+                    method: "PATCH",
+                    body: body
+                )
+                await MainActor.run {
+                    self.productDetail = response
+                    let label = newStatus == "FOR_SALE" ? "판매중" : (newStatus == "RESERVED" ? "예약중" : "판매완료")
+                    AppToast(message: "\(label)(으)로 변경되었습니다.", style: .success)
+                }
+            } catch {
+                await MainActor.run {
+                    AppToast(message: (error as? APIError)?.userMessage ?? "상태 변경에 실패했습니다.", style: .error)
                 }
             }
         }

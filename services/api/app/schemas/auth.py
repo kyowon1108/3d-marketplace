@@ -36,6 +36,11 @@ class GoogleTokenRequest(BaseModel):
     code: str | None = None
 
 
+class UserUpdateRequest(BaseModel):
+    name: str | None = None
+    location_name: str | None = None
+
+
 class UserResponse(BaseModel):
     id: uuid.UUID
     email: str

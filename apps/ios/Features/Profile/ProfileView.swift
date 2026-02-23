@@ -4,7 +4,6 @@ struct ProfileView: View {
     @StateObject private var authManager = AuthManager.shared
     @State private var productCount: Int = 0
     @State private var unreadMessages: Int = 0
-    @State private var showLogoutConfirmation = false
 
     // My products and liked products
     @State private var myProducts: [Product] = []
@@ -19,23 +18,26 @@ struct ProfileView: View {
             List {
                 // Profile Header Card
                 Section {
-                    HStack(spacing: Theme.Spacing.md) {
-                        Image(systemName: "person.circle.fill")
-                            .font(.system(size: 60))
-                            .foregroundColor(Theme.Colors.violetAccent)
+                    NavigationLink(destination: ProfileEditView()) {
+                        HStack(spacing: Theme.Spacing.md) {
+                            Image(systemName: "person.circle.fill")
+                                .font(.system(size: 60))
+                                .foregroundColor(Theme.Colors.violetAccent)
 
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(authManager.currentUser?.name ?? "크리에이터")
-                                .font(.title3)
-                                .fontWeight(.bold)
-                                .foregroundColor(Theme.Colors.textPrimary)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(authManager.currentUser?.name ?? "크리에이터")
+                                    .font(.title3)
+                                    .fontWeight(.bold)
+                                    .foregroundColor(Theme.Colors.textPrimary)
+                                if let location = authManager.currentUser?.location_name, !location.isEmpty {
+                                    Text(location)
+                                        .font(.subheadline)
+                                        .foregroundColor(Theme.Colors.textSecondary)
+                                }
+                            }
+
+                            Spacer()
                         }
-
-                        Spacer()
-
-                        Image(systemName: "chevron.right")
-                            .font(.system(size: 14))
-                            .foregroundColor(Theme.Colors.textSecondary)
                     }
                     .padding(.vertical, 8)
                     .listRowBackground(Theme.Colors.bgSecondary)
@@ -119,11 +121,13 @@ struct ProfileView: View {
 
                 // Settings Section
                 Section(header: Text("기타").foregroundColor(Theme.Colors.textSecondary)) {
-                    Button(action: { showLogoutConfirmation = true }) {
-                        HStack {
-                            Text("로그아웃")
-                                .foregroundColor(.red)
-                            Spacer()
+                    NavigationLink(destination: SettingsView()) {
+                        HStack(spacing: Theme.Spacing.md) {
+                            Image(systemName: "gearshape")
+                                .foregroundColor(Theme.Colors.textPrimary)
+                                .frame(width: 24)
+                            Text("설정")
+                                .foregroundColor(Theme.Colors.textPrimary)
                         }
                     }
                     .listRowBackground(Theme.Colors.bgSecondary)
@@ -137,17 +141,11 @@ struct ProfileView: View {
             .toolbarBackground(Theme.Colors.bgPrimary, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: {}) {
+                    NavigationLink(destination: SettingsView()) {
                         Image(systemName: "gearshape")
                             .foregroundColor(Theme.Colors.textPrimary)
                     }
                 }
-            }
-            .confirmationDialog("로그아웃 하시겠습니까?", isPresented: $showLogoutConfirmation) {
-                Button("로그아웃", role: .destructive) {
-                    authManager.logout()
-                }
-                Button("취소", role: .cancel) {}
             }
             .refreshable {
                 fetchSummary()

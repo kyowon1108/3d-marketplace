@@ -1,6 +1,7 @@
 import uuid
+from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -40,3 +41,12 @@ class UserRepo:
         if existing:
             return existing
         return self.create(email=email, name=name, provider=provider, provider_id=provider_id)
+
+    def update_fields(self, user_id: uuid.UUID, **fields: Any) -> None:
+        stmt = (
+            update(User)
+            .where(User.id == user_id)
+            .values(**fields)
+        )
+        self.db.execute(stmt)
+        self.db.flush()

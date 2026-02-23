@@ -38,6 +38,21 @@ struct ProductPublishRequest: Encodable {
     let price_cents: Int
 }
 
+struct ProductUpdateRequest: Encodable {
+    let title: String?
+    let description: String?
+    let price_cents: Int?
+}
+
+struct StatusChangeRequest: Encodable {
+    let status: String
+}
+
+struct UserUpdateRequest: Encodable {
+    let name: String?
+    let location_name: String?
+}
+
 struct LikeToggleResponse: Decodable {
     let liked: Bool
     let likes_count: Int
@@ -283,6 +298,21 @@ struct CreateChatRoomRequest: Encodable {
     let subject: String
 }
 
+// MARK: AI Suggest
+
+struct AISuggestListingRequest: Encodable {
+    let thumbnail_url: String
+    let dims_width: Double?
+    let dims_height: Double?
+    let dims_depth: Double?
+    let dims_source: String?
+}
+
+struct AISuggestListingResponse: Decodable {
+    let suggested_title: String
+    let suggested_description: String
+}
+
 // MARK: Asset
 
 struct ModelAssetResponse: Decodable {
@@ -321,6 +351,16 @@ struct ArAssetResponse: Decodable {
     let files: [ArAssetFile]
     let dims_source: String?
     let dims_trust: String?
+    let dims_width: Double?
+    let dims_height: Double?
+    let dims_depth: Double?
+
+    /// Formatted dimensions string like "45.2 × 30.1 × 80.5 cm", or nil if no dims.
+    var formattedDimsCm: String? {
+        guard let w = dims_width, let h = dims_height, let d = dims_depth,
+              w > 0, h > 0, d > 0 else { return nil }
+        return "\(w) × \(h) × \(d) cm"
+    }
 
     struct ArAssetFile: Decodable {
         let role: String

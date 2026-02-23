@@ -11,6 +11,16 @@ class PublishRequest(BaseModel):
     price_cents: int
 
 
+class ProductUpdateRequest(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    price_cents: int | None = None
+
+
+class StatusChangeRequest(BaseModel):
+    status: str
+
+
 class ProductResponse(BaseModel):
     id: uuid.UUID
     asset_id: uuid.UUID | None = None

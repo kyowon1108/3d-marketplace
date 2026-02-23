@@ -7,6 +7,7 @@ from app.middleware.auth import get_current_user
 from app.models.enums import ImageType
 from app.models.user import User
 from app.repositories.purchase_repo import PurchaseRepo
+from app.repositories.user_repo import UserRepo
 from app.schemas.auth import (
     AuthProvidersResponse,
     AuthTokenResponse,
@@ -16,6 +17,7 @@ from app.schemas.auth import (
     TokenRefreshResponse,
     UserResponse,
     UserSummaryResponse,
+    UserUpdateRequest,
 )
 from app.schemas.product import ProductResponse, PurchaseListResponse, PurchaseResponse
 from app.services.auth_service import AuthService
@@ -98,6 +100,27 @@ def get_current_user_profile(
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ) -> UserResponse:
+    svc = AuthService(db)
+    result = svc.get_user_response(user.id)
+    if not result:
+        raise HTTPException(status_code=401, detail="User not found")
+    return result
+
+
+@router.patch("/v1/auth/me", response_model=UserResponse)
+def update_current_user_profile(
+    body: UserUpdateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> UserResponse:
+    fields = body.model_dump(exclude_unset=True)
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    repo = UserRepo(db)
+    repo.update_fields(user.id, **fields)
+    db.commit()
+
     svc = AuthService(db)
     result = svc.get_user_response(user.id)
     if not result:

@@ -1,5 +1,6 @@
 import uuid
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, joinedload
@@ -41,7 +42,7 @@ class ProductRepo:
                 joinedload(Product.seller),
                 joinedload(Product.asset).selectinload(ModelAsset.images),
             )
-            .where(Product.id == product_id)
+            .where(Product.id == product_id, Product.deleted_at.is_(None))
         )
         return self.db.execute(stmt).unique().scalar_one_or_none()
 
@@ -59,10 +60,10 @@ class ProductRepo:
                 joinedload(Product.seller),
                 joinedload(Product.asset).selectinload(ModelAsset.images),
             )
-            .where(Product.published_at.isnot(None))
+            .where(Product.published_at.isnot(None), Product.deleted_at.is_(None))
         )
         count_stmt = select(func.count()).select_from(Product).where(
-            Product.published_at.isnot(None)
+            Product.published_at.isnot(None), Product.deleted_at.is_(None)
         )
 
         if q:
@@ -156,3 +157,21 @@ class ProductRepo:
         result = self.db.execute(stmt).scalar_one()
         self.db.flush()
         return result
+
+    def update_fields(self, product_id: uuid.UUID, **fields: Any) -> None:
+        stmt = (
+            update(Product)
+            .where(Product.id == product_id)
+            .values(**fields)
+        )
+        self.db.execute(stmt)
+        self.db.flush()
+
+    def soft_delete(self, product_id: uuid.UUID) -> None:
+        stmt = (
+            update(Product)
+            .where(Product.id == product_id)
+            .values(deleted_at=datetime.now(UTC))
+        )
+        self.db.execute(stmt)
+        self.db.flush()

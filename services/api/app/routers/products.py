@@ -20,8 +20,10 @@ from app.schemas.product import (
     LikeToggleResponse,
     ProductListResponse,
     ProductResponse,
+    ProductUpdateRequest,
     PublishRequest,
     PurchaseResponse,
+    StatusChangeRequest,
 )
 from app.services.ar_asset_service import ArAssetService
 from app.services.chat_service import ChatService
@@ -210,6 +212,76 @@ def get_product(
     return _build_product_response(
         product, liked_ids=liked_ids, is_authed=is_authed, chat_count=chat_count,
     )
+
+
+@router.patch("/{product_id}", response_model=ProductResponse)
+def update_product(
+    product_id: uuid.UUID,
+    body: ProductUpdateRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProductResponse:
+    repo = ProductRepo(db)
+    product = repo.get_by_id(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if product.seller_id != user.id:
+        raise HTTPException(status_code=403, detail="Not the product owner")
+    if product.status == ProductStatus.SOLD_OUT:
+        raise HTTPException(status_code=400, detail="Cannot edit a sold-out product")
+
+    fields = body.model_dump(exclude_unset=True)
+    if not fields:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    repo.update_fields(product_id, **fields)
+    db.commit()
+
+    product = repo.get_by_id(product_id)
+    return _build_product_response(product)  # type: ignore[arg-type]
+
+
+@router.delete("/{product_id}", status_code=204)
+def delete_product(
+    product_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> None:
+    repo = ProductRepo(db)
+    product = repo.get_by_id(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if product.seller_id != user.id:
+        raise HTTPException(status_code=403, detail="Not the product owner")
+
+    repo.soft_delete(product_id)
+    db.commit()
+
+
+@router.patch("/{product_id}/status", response_model=ProductResponse)
+def change_product_status(
+    product_id: uuid.UUID,
+    body: StatusChangeRequest,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProductResponse:
+    repo = ProductRepo(db)
+    product = repo.get_by_id(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+    if product.seller_id != user.id:
+        raise HTTPException(status_code=403, detail="Not the product owner")
+
+    valid_statuses = {s.value for s in ProductStatus}
+    if body.status not in valid_statuses:
+        allowed = ", ".join(valid_statuses)
+        raise HTTPException(status_code=400, detail=f"Invalid status. Must be one of: {allowed}")
+
+    repo.update_status(product_id, body.status)
+    db.commit()
+
+    product = repo.get_by_id(product_id)
+    return _build_product_response(product)  # type: ignore[arg-type]
 
 
 @router.post("/{product_id}/like", response_model=LikeToggleResponse)
