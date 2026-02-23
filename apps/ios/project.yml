@@ -19,6 +19,7 @@ targets:
       - path: DesignSystem
       - path: Features
       - path: Modules
+      - path: Shared
     resources:
       - path: Resources/Assets.xcassets
     settings:

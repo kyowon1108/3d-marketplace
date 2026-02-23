@@ -42,7 +42,7 @@ struct ChatRoomView: View {
                                 .fontWeight(.bold)
                                 .foregroundColor(Theme.Colors.textPrimary)
                                 .lineLimit(1)
-                            Text("$\(Double(product.price_cents) / 100.0, specifier: "%.2f")")
+                            Text(formatPrice(product.price_cents))
                                 .font(.caption)
                                 .foregroundColor(Theme.Colors.textSecondary)
                         }
@@ -96,13 +96,23 @@ struct ChatRoomView: View {
                     Divider()
                         .background(Theme.Colors.glassBorder)
 
-                    HStack(spacing: Theme.Spacing.sm) {
-                        TextField("메시지를 입력하세요...", text: $messageText)
-                            .padding(.horizontal, Theme.Spacing.md)
-                            .padding(.vertical, 10)
-                            .background(Theme.Colors.bgSecondary)
-                            .cornerRadius(20)
-                            .foregroundColor(Theme.Colors.textPrimary)
+                    HStack(alignment: .bottom, spacing: Theme.Spacing.sm) {
+                        ZStack(alignment: .topLeading) {
+                            if messageText.isEmpty {
+                                Text("메시지를 입력하세요...")
+                                    .foregroundColor(Theme.Colors.textMuted)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 10)
+                            }
+                            TextEditor(text: $messageText)
+                                .frame(minHeight: 36, maxHeight: 100)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .foregroundColor(Theme.Colors.textPrimary)
+                                .scrollContentBackground(.hidden)
+                        }
+                        .background(Theme.Colors.bgSecondary)
+                        .cornerRadius(20)
 
                         Button(action: sendMessage) {
                             Image(systemName: "paperplane.fill")
@@ -282,13 +292,19 @@ private struct MessageBubble: View {
                 Spacer()
             }
 
-            Text(message.body)
-                .font(.body)
-                .padding(.horizontal, Theme.Spacing.md)
-                .padding(.vertical, 10)
-                .background(isMe ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
-                .foregroundColor(Theme.Colors.textPrimary)
-                .clipShape(ChatBubbleShape(isMe: isMe))
+            VStack(alignment: isMe ? .trailing : .leading, spacing: 2) {
+                Text(message.body)
+                    .font(.body)
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.vertical, 10)
+                    .background(isMe ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                    .foregroundColor(Theme.Colors.textPrimary)
+                    .clipShape(ChatBubbleShape(isMe: isMe))
+
+                Text(formatTime(from: message.created_at))
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.Colors.textMuted)
+            }
 
             if !isMe {
                 Spacer()

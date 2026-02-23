@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
+from app.models.enums import ImageType
 from app.models.user import User
+from app.repositories.purchase_repo import PurchaseRepo
 from app.schemas.auth import (
     AuthProvidersResponse,
     AuthTokenResponse,
@@ -14,7 +16,9 @@ from app.schemas.auth import (
     UserResponse,
     UserSummaryResponse,
 )
+from app.schemas.product import ProductResponse, PurchaseListResponse, PurchaseResponse
 from app.services.auth_service import AuthService
+from app.services.storage_service import StorageService
 
 router = APIRouter(tags=["auth"])
 
@@ -108,3 +112,60 @@ def get_user_summary(
     if not result:
         raise HTTPException(status_code=401, detail="User not found")
     return result
+
+
+_storage = StorageService()
+
+
+@router.get("/v1/me/purchases", response_model=PurchaseListResponse)
+def get_my_purchases(
+    page: int = 1,
+    limit: int = 20,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PurchaseListResponse:
+    repo = PurchaseRepo(db)
+    purchases, total = repo.list_by_buyer(user.id, page=page, limit=limit)
+
+    items: list[PurchaseResponse] = []
+    for p in purchases:
+        product_resp = None
+        if p.product:
+            thumbnail_url = None
+            if p.product.asset and p.product.asset.images:
+                for img in sorted(p.product.asset.images, key=lambda i: i.sort_order):
+                    if img.image_type == ImageType.THUMBNAIL:
+                        thumbnail_url = _storage.get_download_url(img.storage_key)
+                        break
+
+            product_resp = ProductResponse(
+                id=p.product.id,
+                asset_id=p.product.asset_id,
+                title=p.product.title,
+                description=p.product.description,
+                price_cents=p.product.price_cents,
+                seller_id=p.product.seller_id,
+                published_at=p.product.published_at,
+                created_at=p.product.created_at,
+                seller_name=p.product.seller.name if p.product.seller else "",
+                thumbnail_url=thumbnail_url,
+                status=p.product.status,
+                likes_count=p.product.likes_count,
+                views_count=p.product.views_count,
+            )
+
+        items.append(PurchaseResponse(
+            id=p.id,
+            product_id=p.product_id,
+            buyer_id=p.buyer_id,
+            price_cents=p.price_cents,
+            purchased_at=p.purchased_at,
+            product=product_resp,
+        ))
+
+    return PurchaseListResponse(
+        purchases=items,
+        total=total,
+        page=page,
+        limit=limit,
+    )

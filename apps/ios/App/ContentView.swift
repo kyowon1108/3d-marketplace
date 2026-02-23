@@ -7,9 +7,9 @@ struct ContentView: View {
     @State private var unreadCount: Int = 0
 
     enum Tab {
-        case home, browse, sell, inbox, profile
+        case home, sell, inbox, profile
     }
-    
+
     var body: some View {
         Group {
             if authManager.isAuthenticated {
@@ -24,39 +24,36 @@ struct ContentView: View {
             authManager.logout()
             AppToast(message: "세션이 만료되었습니다. 다시 로그인해주세요.", style: .error)
         }
+        .onReceive(NotificationCenter.default.publisher(for: .switchToHomeTab)) { _ in
+            selectedTab = .home
+        }
     }
-    
+
     @ViewBuilder
     private func mainTabView() -> some View {
         TabView(selection: $selectedTab) {
-            HomeView()
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(Tab.home)
-            
             ProductListView()
                 .tabItem {
-                    Label("Browse", systemImage: "magnifyingglass")
+                    Label("홈", systemImage: "house.fill")
                 }
-                .tag(Tab.browse)
-            
+                .tag(Tab.home)
+
             SellNewView()
                 .tabItem {
-                    Label("Sell", systemImage: "plus.circle.fill")
+                    Label("판매", systemImage: "plus.circle.fill")
                 }
                 .tag(Tab.sell)
-            
+
             InboxView()
                 .tabItem {
-                    Label("Inbox", systemImage: "message.fill")
+                    Label("채팅", systemImage: "message.fill")
                 }
                 .tag(Tab.inbox)
                 .badge(unreadCount)
-            
+
             ProfileView()
                 .tabItem {
-                    Label("Profile", systemImage: "person.fill")
+                    Label("프로필", systemImage: "person.fill")
                 }
                 .tag(Tab.profile)
         }
@@ -73,7 +70,7 @@ struct ContentView: View {
             let appearance = UITabBarAppearance()
             appearance.configureWithTransparentBackground()
             appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-            
+
             UITabBar.appearance().standardAppearance = appearance
             if #available(iOS 15.0, *) {
                 UITabBar.appearance().scrollEdgeAppearance = appearance

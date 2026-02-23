@@ -61,7 +61,7 @@ implement/         Gate-based refactor docs (read-only reference)
 - 체크리스트 미갱신 상태에서 커밋
 
 ## Branch & Commit Convention
-Branch: `codex/gate{0|a|b|c}-<topic>`
+Branch: `gate{0|a|b|c}-<topic>`
 Commit: `<type>(<area>): <intent>`
 Types: `feat | fix | refactor | docs | chore`
 

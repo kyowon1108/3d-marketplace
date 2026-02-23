@@ -21,6 +21,7 @@ struct MarketplaceApp: App {
 // Global Toast Notification Helper
 extension Notification.Name {
     static let showToast = Notification.Name("showToast")
+    static let switchToHomeTab = Notification.Name("switchToHomeTab")
 }
 
 func AppToast(message: String, style: ToastStyle = .info) {

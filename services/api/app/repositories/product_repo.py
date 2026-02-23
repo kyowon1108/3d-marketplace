@@ -137,6 +137,15 @@ class ProductRepo:
         self.db.flush()
         return result
 
+    def update_status(self, product_id: uuid.UUID, status: str) -> None:
+        stmt = (
+            update(Product)
+            .where(Product.id == product_id)
+            .values(status=status)
+        )
+        self.db.execute(stmt)
+        self.db.flush()
+
     def decrement_likes(self, product_id: uuid.UUID) -> int:
         stmt = (
             update(Product)

@@ -233,7 +233,7 @@ struct ProductDetailView: View {
                     .foregroundColor(Theme.Colors.textPrimary)
 
                 // Category and Time
-                Text("디지털기기 • 17분 전") // Hardcoded category/time for MVP
+                Text(relativeTime(from: product.created_at))
                     .font(.system(size: 13))
                     .foregroundColor(Theme.Colors.textSecondary)
 
@@ -328,7 +328,7 @@ struct ProductDetailView: View {
 
                 // Price
                 if let product = productDetail {
-                    Text("$\(Double(product.price_cents) / 100.0, specifier: "%.2f")")
+                    Text(formatPrice(product.price_cents))
                         .font(.system(size: 20, weight: .bold))
                         .foregroundColor(Theme.Colors.textPrimary)
                 } else {

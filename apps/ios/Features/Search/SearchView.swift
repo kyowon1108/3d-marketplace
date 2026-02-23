@@ -142,9 +142,11 @@ struct SearchView: View {
                         id: UUID(uuidString: p.id) ?? UUID(),
                         title: p.title,
                         creator: p.seller_name ?? "알 수 없는 판매자",
-                        price: "$\(String(format: "%.2f", Double(p.price_cents) / 100.0))",
+                        priceCents: p.price_cents,
                         likes: p.likes_count ?? 0,
-                        thumbnailUrl: p.thumbnail_url
+                        thumbnailUrl: p.thumbnail_url,
+                        createdAt: p.created_at,
+                        chatCount: p.chat_count ?? 0
                     )
                 }
                 await MainActor.run {

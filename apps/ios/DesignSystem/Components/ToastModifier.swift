@@ -57,37 +57,27 @@ public struct ToastModifier: ViewModifier {
     
     @ViewBuilder private func mainToastView() -> some View {
         if let toast = toast {
-            HStack(alignment: .center, spacing: Theme.Spacing.md) {
-                // Left Border Indicator
-                Rectangle()
-                    .fill(toast.style.themeColor)
-                    .frame(width: 4)
-                
+            HStack(alignment: .center, spacing: Theme.Spacing.sm) {
                 Image(systemName: toast.style.iconName)
                     .foregroundColor(toast.style.themeColor)
-                    .font(.system(size: 20))
+                    .font(.system(size: 16))
                 
                 Text(toast.message)
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(Theme.Colors.textPrimary)
-                    .multilineTextAlignment(.leading)
                     .lineLimit(2)
-                
-                Spacer(minLength: 0)
             }
+            .padding(.horizontal, Theme.Spacing.lg)
             .padding(.vertical, Theme.Spacing.sm)
-            .padding(.trailing, Theme.Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Theme.Colors.bgSecondary)
+            .background(Theme.Colors.bgSecondary.opacity(0.95))
             .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.sm))
+            .clipShape(Capsule())
             .overlay(
-                RoundedRectangle(cornerRadius: Theme.Radius.sm)
+                Capsule()
                     .stroke(Theme.Colors.glassBorder, lineWidth: 1)
             )
-            .padding(.horizontal, Theme.Spacing.md)
             .padding(.top, 50) // Safe area inset approx
-            .shadow(color: Color.black.opacity(0.4), radius: 10, x: 0, y: 5)
+            .shadow(color: Color.black.opacity(0.2), radius: 8, x: 0, y: 4)
             .onTapGesture {
                 dismissToast()
             }

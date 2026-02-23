@@ -41,3 +41,19 @@ class ProductListResponse(BaseModel):
 class LikeToggleResponse(BaseModel):
     liked: bool
     likes_count: int
+
+
+class PurchaseResponse(BaseModel):
+    id: uuid.UUID
+    product_id: uuid.UUID
+    buyer_id: uuid.UUID
+    price_cents: int
+    purchased_at: datetime
+    product: ProductResponse | None = None
+
+
+class PurchaseListResponse(BaseModel):
+    purchases: list[PurchaseResponse]
+    total: int
+    page: int
+    limit: int

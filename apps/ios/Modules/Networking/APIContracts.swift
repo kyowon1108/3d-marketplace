@@ -43,6 +43,24 @@ struct LikeToggleResponse: Decodable {
     let likes_count: Int
 }
 
+// MARK: Purchases
+
+struct PurchaseAPIResponse: Decodable, Identifiable {
+    let id: String
+    let product_id: String
+    let buyer_id: String
+    let price_cents: Int
+    let purchased_at: String
+    let product: ProductResponse?
+}
+
+struct PurchaseListAPIResponse: Decodable {
+    let purchases: [PurchaseAPIResponse]
+    let total: Int
+    let page: Int
+    let limit: Int
+}
+
 // MARK: Upload
 
 struct UploadInitRequest: Encodable {
@@ -207,6 +225,33 @@ struct ChatRoomResponse: Decodable, Identifiable {
     let last_message_at: String?
     let last_message_body: String?
     let unread_count: Int
+    let buyer_name: String
+    let seller_name: String
+    let product_title: String
+    let product_thumbnail_url: String?
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(String.self, forKey: .id)
+        product_id = try container.decode(String.self, forKey: .product_id)
+        buyer_id = try container.decode(String.self, forKey: .buyer_id)
+        seller_id = try container.decode(String.self, forKey: .seller_id)
+        subject = try container.decode(String.self, forKey: .subject)
+        created_at = try container.decode(String.self, forKey: .created_at)
+        last_message_at = try container.decodeIfPresent(String.self, forKey: .last_message_at)
+        last_message_body = try container.decodeIfPresent(String.self, forKey: .last_message_body)
+        unread_count = try container.decodeIfPresent(Int.self, forKey: .unread_count) ?? 0
+        buyer_name = try container.decodeIfPresent(String.self, forKey: .buyer_name) ?? ""
+        seller_name = try container.decodeIfPresent(String.self, forKey: .seller_name) ?? ""
+        product_title = try container.decodeIfPresent(String.self, forKey: .product_title) ?? ""
+        product_thumbnail_url = try container.decodeIfPresent(String.self, forKey: .product_thumbnail_url)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, product_id, buyer_id, seller_id, subject, created_at
+        case last_message_at, last_message_body, unread_count
+        case buyer_name, seller_name, product_title, product_thumbnail_url
+    }
 }
 
 struct ChatMessageListResponse: Decodable {

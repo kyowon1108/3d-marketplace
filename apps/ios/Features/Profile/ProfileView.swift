@@ -23,30 +23,24 @@ struct ProfileView: View {
                         Image(systemName: "person.circle.fill")
                             .font(.system(size: 60))
                             .foregroundColor(Theme.Colors.violetAccent)
-                        
+
                         VStack(alignment: .leading, spacing: 4) {
                             Text(authManager.currentUser?.name ?? "크리에이터")
                                 .font(.title3)
                                 .fontWeight(.bold)
                                 .foregroundColor(Theme.Colors.textPrimary)
-                            
-                            HStack(spacing: 4) {
-                                Text(authManager.currentUser?.location_name ?? "지역 설정")
-                                    .font(.system(size: 13))
-                                    .foregroundColor(Theme.Colors.textSecondary)
-                            }
                         }
-                        
+
                         Spacer()
-                        
+
                         Image(systemName: "chevron.right")
                             .font(.system(size: 14))
                             .foregroundColor(Theme.Colors.textSecondary)
                     }
                     .padding(.vertical, 8)
                     .listRowBackground(Theme.Colors.bgSecondary)
-                    
-                    // Stats quick row (Pay/Points Mock)
+
+                    // Stats quick row
                     HStack {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("판매상품")
@@ -69,10 +63,10 @@ struct ProfileView: View {
                     .padding(.vertical, 8)
                     .listRowBackground(Theme.Colors.bgSecondary)
                 }
-                
+
                 // My Trades Section
                 Section(header: Text("나의 거래").foregroundColor(Theme.Colors.textSecondary)) {
-                    NavigationLink(destination: MyProductsListView(products: myProducts)) {
+                    NavigationLink(destination: MyProductsListView(products: myProducts, title: "판매내역")) {
                         HStack(spacing: Theme.Spacing.md) {
                             Image(systemName: "text.book.closed")
                                 .foregroundColor(Theme.Colors.textPrimary)
@@ -82,8 +76,8 @@ struct ProfileView: View {
                         }
                     }
                     .listRowBackground(Theme.Colors.bgSecondary)
-                    
-                    NavigationLink(destination: Text("구매내역 뷰 (준비 중)").foregroundColor(Theme.Colors.textPrimary)) {
+
+                    NavigationLink(destination: PurchaseHistoryView()) {
                         HStack(spacing: Theme.Spacing.md) {
                             Image(systemName: "bag")
                                 .foregroundColor(Theme.Colors.textPrimary)
@@ -94,10 +88,10 @@ struct ProfileView: View {
                     }
                     .listRowBackground(Theme.Colors.bgSecondary)
                 }
-                
+
                 // My Interests
                 Section(header: Text("나의 관심").foregroundColor(Theme.Colors.textSecondary)) {
-                    NavigationLink(destination: MyProductsListView(products: likedProducts)) {
+                    NavigationLink(destination: MyProductsListView(products: likedProducts, title: "관심목록")) {
                         HStack(spacing: Theme.Spacing.md) {
                             Image(systemName: "heart")
                                 .foregroundColor(Theme.Colors.textPrimary)
@@ -108,7 +102,7 @@ struct ProfileView: View {
                     }
                     .listRowBackground(Theme.Colors.bgSecondary)
                 }
-                
+
                 // Settings Section
                 Section(header: Text("기타").foregroundColor(Theme.Colors.textSecondary)) {
                     Button(action: { showLogoutConfirmation = true }) {
@@ -123,7 +117,7 @@ struct ProfileView: View {
             }
             .scrollContentBackground(.hidden)
             .background(Theme.Colors.bgPrimary)
-            .navigationTitle("나의 당근")
+            .navigationTitle("마이페이지")
             .navigationBarTitleDisplayMode(.large)
             .toolbarColorScheme(.dark, for: .navigationBar)
             .toolbarBackground(Theme.Colors.bgPrimary, for: .navigationBar)
@@ -158,8 +152,6 @@ struct ProfileView: View {
 
     // MARK: - Networking
 
-    // MARK: - Networking
-
     private func fetchSummary() {
         Task {
             do {
@@ -189,9 +181,11 @@ struct ProfileView: View {
                         id: UUID(uuidString: p.id) ?? UUID(),
                         title: p.title,
                         creator: p.seller_name ?? "알 수 없는 판매자",
-                        price: "$\(String(format: "%.2f", Double(p.price_cents) / 100.0))",
+                        priceCents: p.price_cents,
                         likes: p.likes_count ?? 0,
-                        thumbnailUrl: p.thumbnail_url
+                        thumbnailUrl: p.thumbnail_url,
+                        createdAt: p.created_at,
+                        chatCount: p.chat_count ?? 0
                     )
                 }
                 await MainActor.run {
@@ -219,9 +213,11 @@ struct ProfileView: View {
                         id: UUID(uuidString: p.id) ?? UUID(),
                         title: p.title,
                         creator: p.seller_name ?? "알 수 없는 판매자",
-                        price: "$\(String(format: "%.2f", Double(p.price_cents) / 100.0))",
+                        priceCents: p.price_cents,
                         likes: p.likes_count ?? 0,
-                        thumbnailUrl: p.thumbnail_url
+                        thumbnailUrl: p.thumbnail_url,
+                        createdAt: p.created_at,
+                        chatCount: p.chat_count ?? 0
                     )
                 }
                 await MainActor.run {
@@ -238,13 +234,16 @@ struct ProfileView: View {
     }
 }
 
+// MARK: - My Products List View
+
 private struct MyProductsListView: View {
     let products: [Product]
-    
+    var title: String = "목록"
+
     var body: some View {
         ZStack {
             Theme.Colors.bgPrimary.ignoresSafeArea()
-            
+
             if products.isEmpty {
                 EmptyStateView(
                     title: "상품이 없습니다",
@@ -260,7 +259,7 @@ private struct MyProductsListView: View {
                                 ProductListRow(product: product)
                             }
                             .buttonStyle(.plain)
-                            
+
                             Divider()
                                 .background(Color.white.opacity(0.1))
                                 .padding(.horizontal, Theme.Spacing.md)
@@ -271,7 +270,117 @@ private struct MyProductsListView: View {
                 }
             }
         }
-        .navigationTitle("목록")
+        .navigationTitle(title)
         .navigationBarTitleDisplayMode(.inline)
+    }
+}
+
+// MARK: - Purchase History View
+
+struct PurchaseHistoryView: View {
+    @State private var purchases: [PurchaseItem] = []
+    @State private var isLoading = true
+    @State private var totalCount = 0
+
+    struct PurchaseItem: Identifiable {
+        let id: UUID
+        let product: Product?
+        let priceCents: Int
+        let purchasedAt: String
+    }
+
+    var body: some View {
+        ZStack {
+            Theme.Colors.bgPrimary.ignoresSafeArea()
+
+            if isLoading {
+                ScrollView {
+                    LazyVStack(spacing: Theme.Spacing.md) {
+                        ForEach(0..<4, id: \.self) { _ in ProductListRowSkeleton() }
+                    }
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.top, Theme.Spacing.md)
+                }
+            } else if purchases.isEmpty {
+                EmptyStateView(
+                    title: "구매내역이 없습니다",
+                    message: "아직 구매한 상품이 없습니다.",
+                    systemImage: "bag",
+                    actionTitle: "홈으로 가기"
+                ) {}
+            } else {
+                ScrollView {
+                    LazyVStack(spacing: 0) {
+                        ForEach(purchases) { item in
+                            if let product = item.product {
+                                NavigationLink(destination: ProductDetailView(productId: product.id)) {
+                                    ProductListRow(product: product)
+                                }
+                                .buttonStyle(.plain)
+                            }
+
+                            Divider()
+                                .background(Color.white.opacity(0.1))
+                                .padding(.horizontal, Theme.Spacing.md)
+                        }
+                    }
+                    .padding(.top, Theme.Spacing.md)
+                    .padding(.bottom, 100)
+                }
+                .refreshable {
+                    await fetchPurchases()
+                }
+            }
+        }
+        .navigationTitle("구매내역")
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            if purchases.isEmpty {
+                Task { await fetchPurchases() }
+            }
+        }
+    }
+
+    private func fetchPurchases() async {
+        isLoading = true
+        do {
+            let response: PurchaseListAPIResponse = try await APIClient.shared.request(
+                endpoint: "/me/purchases"
+            )
+            let items = response.purchases.map { p in
+                let product: Product? = {
+                    guard let pr = p.product else { return nil }
+                    return Product(
+                        id: UUID(uuidString: pr.id) ?? UUID(),
+                        title: pr.title,
+                        creator: pr.seller_name ?? "판매자",
+                        priceCents: pr.price_cents,
+                        likes: pr.likes_count ?? 0,
+                        thumbnailUrl: pr.thumbnail_url,
+                        createdAt: pr.created_at,
+                        chatCount: pr.chat_count ?? 0
+                    )
+                }()
+                return PurchaseItem(
+                    id: UUID(uuidString: p.id) ?? UUID(),
+                    product: product,
+                    priceCents: p.price_cents,
+                    purchasedAt: p.purchased_at
+                )
+            }
+            await MainActor.run {
+                self.purchases = items
+                self.totalCount = response.total
+                self.isLoading = false
+            }
+        } catch {
+            await MainActor.run {
+                self.isLoading = false
+                NotificationCenter.default.post(
+                    name: .showToast,
+                    object: Toast(message: (error as? APIError)?.userMessage ?? "구매내역 불러오기 실패", style: .error)
+                )
+            }
+        }
     }
 }

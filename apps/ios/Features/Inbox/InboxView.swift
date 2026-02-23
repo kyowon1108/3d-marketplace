@@ -37,43 +37,47 @@ struct InboxView: View {
                             ForEach(filteredRooms(chatRooms)) { room in
                                 NavigationLink(destination: ChatRoomView(room: room)) {
                                     HStack(spacing: Theme.Spacing.md) {
-                                        // Left: Avatars (User + Product Thumbnail)
+                                        // Left: Product Thumbnail + User avatar overlay
                                         ZStack(alignment: .bottomTrailing) {
-                                            Circle()
-                                                .fill(Theme.Colors.bgSecondary)
+                                            if let thumbURL = room.product_thumbnail_url, let url = URL(string: thumbURL) {
+                                                AsyncImage(url: url) { phase in
+                                                    switch phase {
+                                                    case .success(let image):
+                                                        image.resizable().scaledToFill()
+                                                    default:
+                                                        RoundedRectangle(cornerRadius: 8)
+                                                            .fill(Theme.Colors.bgSecondary)
+                                                            .overlay(
+                                                                Image(systemName: "cube.fill")
+                                                                    .foregroundColor(Theme.Colors.textMuted)
+                                                            )
+                                                    }
+                                                }
                                                 .frame(width: 48, height: 48)
-                                                .overlay(
-                                                    Image(systemName: "person.fill")
-                                                        .foregroundColor(Theme.Colors.textMuted)
-                                                )
-                                            
-                                            // Mock overlapping product thumbnail
-                                            RoundedRectangle(cornerRadius: 6)
-                                                .fill(Color.gray)
-                                                .frame(width: 20, height: 20)
-                                                .overlay(
-                                                    Image(systemName: "cube.fill")
-                                                        .resizable()
-                                                        .padding(4)
-                                                        .foregroundColor(.white)
-                                                )
-                                                .shadow(radius: 2)
-                                                .offset(x: 4, y: 4)
+                                                .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            } else {
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Theme.Colors.bgSecondary)
+                                                    .frame(width: 48, height: 48)
+                                                    .overlay(
+                                                        Image(systemName: "cube.fill")
+                                                            .foregroundColor(Theme.Colors.textMuted)
+                                                    )
+                                            }
                                         }
 
                                         // Center: Message info
                                         VStack(alignment: .leading, spacing: 4) {
                                             HStack(spacing: 4) {
-                                                // Normally we'd look up the OTHER user's name
-                                                Text("사용자 \(String(room.buyer_id.prefix(4)))")
+                                                Text(partnerName(for: room))
                                                     .font(.system(size: 16, weight: .bold))
                                                     .foregroundColor(Theme.Colors.textPrimary)
-                                                
-                                                Text("지역 정보 · \(room.last_message_at ?? "방금 전")")
+
+                                                Text(relativeTime(from: room.last_message_at ?? room.created_at))
                                                     .font(.system(size: 12))
                                                     .foregroundColor(Theme.Colors.textSecondary)
                                             }
-                                            
+
                                             Text(room.last_message_body ?? "메시지가 없습니다.")
                                                 .font(.system(size: 14))
                                                 .foregroundColor(Theme.Colors.textSecondary)
@@ -135,6 +139,15 @@ struct InboxView: View {
                     )
                 }
             }
+        }
+    }
+
+    private func partnerName(for room: ChatRoomResponse) -> String {
+        let currentUserId = AuthManager.shared.currentUser?.id
+        if room.buyer_id == currentUserId {
+            return room.seller_name.isEmpty ? "판매자" : room.seller_name
+        } else {
+            return room.buyer_name.isEmpty ? "구매자" : room.buyer_name
         }
     }
 

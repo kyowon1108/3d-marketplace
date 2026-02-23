@@ -18,6 +18,10 @@ class ChatRoomResponse(BaseModel):
     last_message_at: datetime | None = None
     last_message_body: str | None = None
     unread_count: int = 0
+    buyer_name: str = ""
+    seller_name: str = ""
+    product_title: str = ""
+    product_thumbnail_url: str | None = None
 
 
 class SendMessageRequest(BaseModel):

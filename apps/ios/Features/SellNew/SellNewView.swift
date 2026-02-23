@@ -134,11 +134,11 @@ struct SellNewView: View {
                             }
                             
                             VStack(alignment: .leading, spacing: 8) {
-                                Text("가격 (USD) *")
+                                Text("가격 (원) *")
                                     .font(.headline)
                                     .foregroundColor(Theme.Colors.textPrimary)
-                                TextField("예: 15.00", text: $viewModel.publishPrice)
-                                    .keyboardType(.decimalPad)
+                                TextField("예: 15000", text: $viewModel.publishPrice)
+                                    .keyboardType(.numberPad)
                                     .padding()
                                     .background(Theme.Colors.bgSecondary)
                                     .cornerRadius(12)
@@ -149,13 +149,21 @@ struct SellNewView: View {
                                 Text("설명 (선택)")
                                     .font(.headline)
                                     .foregroundColor(Theme.Colors.textPrimary)
-                                TextEditor(text: $viewModel.publishDescription)
-                                    .frame(minHeight: 120)
-                                    .padding(8)
-                                    .background(Theme.Colors.bgSecondary)
-                                    .cornerRadius(12)
-                                    .foregroundColor(Theme.Colors.textPrimary)
-                                    .scrollContentBackground(.hidden)
+                                ZStack(alignment: .topLeading) {
+                                    if viewModel.publishDescription.isEmpty {
+                                        Text("상품의 상태, 특징 등을 설명해주세요")
+                                            .foregroundColor(Theme.Colors.textMuted)
+                                            .padding(.horizontal, 12)
+                                            .padding(.vertical, 16)
+                                    }
+                                    TextEditor(text: $viewModel.publishDescription)
+                                        .frame(minHeight: 120)
+                                        .padding(8)
+                                        .foregroundColor(Theme.Colors.textPrimary)
+                                        .scrollContentBackground(.hidden)
+                                }
+                                .background(Theme.Colors.bgSecondary)
+                                .cornerRadius(12)
                             }
                         }
                     }
@@ -239,19 +247,36 @@ struct SellNewView: View {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 80))
                     .foregroundColor(Theme.Colors.success)
-                    
+
                 Text("상품 등록 완료!")
                     .font(.largeTitle).bold()
                     .foregroundColor(Theme.Colors.textPrimary)
-                
-                Button("완료") {
-                    withAnimation {
-                        viewModel.reset() // returns to .publish
-                    }
+
+                Text("잠시 후 홈으로 이동합니다...")
+                    .font(.subheadline)
+                    .foregroundColor(Theme.Colors.textSecondary)
+
+                Button("바로 이동") {
+                    navigateToHome()
                 }
                 .font(.headline)
                 .foregroundColor(Theme.Colors.violetAccent)
             }
         }
+        .onAppear {
+            Task {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                if viewModel.currentStep == .success {
+                    navigateToHome()
+                }
+            }
+        }
+    }
+
+    private func navigateToHome() {
+        withAnimation {
+            viewModel.reset()
+        }
+        NotificationCenter.default.post(name: .switchToHomeTab, object: nil)
     }
 }

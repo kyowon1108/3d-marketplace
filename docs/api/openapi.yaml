@@ -209,6 +209,36 @@ paths:
         "404":
           $ref: "#/components/responses/NotFound"
 
+  /v1/products/{id}/purchase:
+    post:
+      operationId: purchaseProduct
+      summary: Purchase a product (creates purchase record and marks product SOLD_OUT)
+      tags: [products]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Purchase created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
   /v1/products/{id}/ar-asset:
     get:
       operationId: getProductArAsset
@@ -504,6 +534,34 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/UserResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /v1/me/purchases:
+    get:
+      operationId: getMyPurchases
+      summary: List current user's purchase history
+      tags: [auth]
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+      responses:
+        "200":
+          description: Purchase list
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PurchaseListResponse"
         "401":
           $ref: "#/components/responses/Unauthorized"
 
@@ -1054,6 +1112,51 @@ components:
         - page
         - limit
 
+    PurchaseResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        product_id:
+          type: string
+          format: uuid
+        buyer_id:
+          type: string
+          format: uuid
+        price_cents:
+          type: integer
+        purchased_at:
+          type: string
+          format: date-time
+        product:
+          $ref: "#/components/schemas/ProductResponse"
+      required:
+        - id
+        - product_id
+        - buyer_id
+        - price_cents
+        - purchased_at
+
+    PurchaseListResponse:
+      type: object
+      properties:
+        purchases:
+          type: array
+          items:
+            $ref: "#/components/schemas/PurchaseResponse"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - purchases
+        - total
+        - page
+        - limit
+
     LikeToggleResponse:
       type: object
       properties:
@@ -1104,6 +1207,18 @@ components:
         unread_count:
           type: integer
           default: 0
+        buyer_name:
+          type: string
+          default: ""
+        seller_name:
+          type: string
+          default: ""
+        product_title:
+          type: string
+          default: ""
+        product_thumbnail_url:
+          type: string
+          nullable: true
       required:
         - id
         - product_id

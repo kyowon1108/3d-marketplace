@@ -11,6 +11,7 @@ from app.models.product import Product
 from app.models.user import User
 from app.repositories.product_like_repo import ProductLikeRepo
 from app.repositories.product_repo import ProductRepo
+from app.repositories.purchase_repo import PurchaseRepo
 from app.schemas.asset import ArAssetResponse
 from app.schemas.chat import ChatRoomResponse, CreateChatRoomRequest
 from app.schemas.product import (
@@ -18,6 +19,7 @@ from app.schemas.product import (
     ProductListResponse,
     ProductResponse,
     PublishRequest,
+    PurchaseResponse,
 )
 from app.services.ar_asset_service import ArAssetService
 from app.services.chat_service import ChatService
@@ -234,6 +236,44 @@ def get_product_ar_asset(
 
     svc = ArAssetService(db)
     return svc.get_ar_asset(product.asset_id)
+
+
+@router.post("/{product_id}/purchase", response_model=PurchaseResponse, status_code=201)
+def purchase_product(
+    product_id: uuid.UUID,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> PurchaseResponse:
+    repo = ProductRepo(db)
+    product = repo.get_by_id(product_id)
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    if product.seller_id == user.id:
+        raise HTTPException(status_code=403, detail="Cannot purchase your own product")
+
+    if product.status == "SOLD_OUT":
+        raise HTTPException(status_code=400, detail="Product is already sold out")
+
+    purchase_repo = PurchaseRepo(db)
+    purchase = purchase_repo.create(
+        product_id=product.id,
+        buyer_id=user.id,
+        price_cents=product.price_cents,
+    )
+    repo.update_status(product.id, "SOLD_OUT")
+    db.commit()
+    db.refresh(purchase)
+
+    product_resp = _build_product_response(product)
+    return PurchaseResponse(
+        id=purchase.id,
+        product_id=purchase.product_id,
+        buyer_id=purchase.buyer_id,
+        price_cents=purchase.price_cents,
+        purchased_at=purchase.purchased_at,
+        product=product_resp,
+    )
 
 
 @router.post("/{product_id}/chat-rooms", response_model=ChatRoomResponse, status_code=201)

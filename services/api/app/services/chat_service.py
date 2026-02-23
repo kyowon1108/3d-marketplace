@@ -5,9 +5,13 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.chat import ChatRoom
+from app.models.enums import ImageType
 from app.repositories.chat_repo import ChatRepo
 from app.repositories.product_repo import ProductRepo
 from app.schemas.chat import ChatMessageResponse, ChatRoomResponse
+from app.services.storage_service import StorageService
+
+_storage = StorageService()
 
 
 class ChatService:
@@ -20,6 +24,24 @@ class ChatService:
         self, room: ChatRoom, user_id: uuid.UUID,
     ) -> ChatRoomResponse:
         unread = self.chat_repo.count_unread_for_room(room, user_id)
+
+        buyer_name = ""
+        seller_name = ""
+        product_title = ""
+        product_thumbnail_url: str | None = None
+
+        if room.buyer:
+            buyer_name = room.buyer.name or ""
+        if room.seller:
+            seller_name = room.seller.name or ""
+        if room.product:
+            product_title = room.product.title or ""
+            if room.product.asset and room.product.asset.images:
+                for img in sorted(room.product.asset.images, key=lambda i: i.sort_order):
+                    if img.image_type == ImageType.THUMBNAIL:
+                        product_thumbnail_url = _storage.get_download_url(img.storage_key)
+                        break
+
         return ChatRoomResponse(
             id=room.id,
             product_id=room.product_id,
@@ -30,6 +52,10 @@ class ChatService:
             last_message_at=room.last_message_at,
             last_message_body=room.last_message_body,
             unread_count=unread,
+            buyer_name=buyer_name,
+            seller_name=seller_name,
+            product_title=product_title,
+            product_thumbnail_url=product_thumbnail_url,
         )
 
     def create_room(

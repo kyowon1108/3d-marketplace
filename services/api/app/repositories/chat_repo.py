@@ -2,9 +2,10 @@ import uuid
 from datetime import UTC, datetime
 
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 from app.models.chat import ChatMessage, ChatRoom
+from app.models.product import Product
 
 
 class ChatRepo:
@@ -31,10 +32,15 @@ class ChatRepo:
     def list_rooms(self, user_id: uuid.UUID) -> list[ChatRoom]:
         stmt = (
             select(ChatRoom)
+            .options(
+                joinedload(ChatRoom.buyer),
+                joinedload(ChatRoom.seller),
+                joinedload(ChatRoom.product).joinedload(Product.asset),
+            )
             .where(or_(ChatRoom.buyer_id == user_id, ChatRoom.seller_id == user_id))
             .order_by(ChatRoom.last_message_at.desc().nullslast(), ChatRoom.created_at.desc())
         )
-        return list(self.db.execute(stmt).scalars().all())
+        return list(self.db.execute(stmt).scalars().unique().all())
 
     def get_room(self, room_id: uuid.UUID) -> ChatRoom | None:
         return self.db.get(ChatRoom, room_id)

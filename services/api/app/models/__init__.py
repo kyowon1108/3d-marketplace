@@ -7,6 +7,7 @@ from app.models.model_asset import ModelAsset
 from app.models.model_asset_file import ModelAssetFile
 from app.models.product import Product
 from app.models.product_like import ProductLike
+from app.models.purchase import Purchase
 from app.models.refresh_token import RefreshToken
 from app.models.user import User
 
@@ -21,6 +22,7 @@ __all__ = [
     "ModelAssetFile",
     "Product",
     "ProductLike",
+    "Purchase",
     "RefreshToken",
     "User",
 ]

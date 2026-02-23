@@ -37,6 +37,7 @@ public class SellNewViewModel {
 
     // ModelingKit
     private let modelBuilder = LocalModelBuilder()
+    private let exportCoordinator = ModelExportCoordinator()
 
     public func startCapture() {
         currentStep = .capture
@@ -117,14 +118,14 @@ public class SellNewViewModel {
                 self.processingStatusText = "업로드 서버에 자리 만드는 중..."
                 self.processingProgress = 0.1
 
-                // 썸네일 생성 시도
+                // 썸네일 생성 시도: QLThumbnailGenerator → SceneKit fallback
                 var thumbnailData: Data? = nil
                 let thumbnailURL = modelURL.deletingPathExtension().appendingPathExtension("jpg")
-                
+
                 let size = CGSize(width: 512, height: 512)
                 let scale = UIScreen.main.scale
                 let request = QLThumbnailGenerator.Request(fileAt: modelURL, size: size, scale: scale, representationTypes: .thumbnail)
-                
+
                 do {
                     let thumbnail = try await QLThumbnailGenerator.shared.generateBestRepresentation(for: request)
                     if let jpgData = thumbnail.uiImage.jpegData(compressionQuality: 0.8) {
@@ -133,7 +134,19 @@ public class SellNewViewModel {
                         self.generatedThumbnailURL = thumbnailURL
                     }
                 } catch {
-                    print("[Upload] Thumbnail generation failed: \(error)")
+                    #if DEBUG
+                    print("[Upload] QLThumbnail failed, trying SceneKit: \(error)")
+                    #endif
+                    // Fallback: SceneKit snapshot
+                    if let sceneThumbURL = exportCoordinator.generateThumbnail(from: modelURL, size: size),
+                       let pngData = try? Data(contentsOf: sceneThumbURL) {
+                        // Convert PNG to JPG for smaller size
+                        if let uiImg = UIImage(data: pngData), let jpgData = uiImg.jpegData(compressionQuality: 0.8) {
+                            try? jpgData.write(to: thumbnailURL)
+                            thumbnailData = jpgData
+                            self.generatedThumbnailURL = thumbnailURL
+                        }
+                    }
                 }
 
                 #if DEBUG
@@ -280,7 +293,7 @@ public class SellNewViewModel {
             return
         }
 
-        let priceCents = Int((Double(publishPrice) ?? 0) * 100)
+        let priceCents = Int(publishPrice) ?? 0
         let requestBody = ProductPublishRequest(
             asset_id: assetId,
             title: publishTitle,
