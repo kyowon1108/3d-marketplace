@@ -66,7 +66,14 @@ struct ProfileView: View {
 
                 // My Trades Section
                 Section(header: Text("나의 거래").foregroundColor(Theme.Colors.textSecondary)) {
-                    NavigationLink(destination: MyProductsListView(products: myProducts, title: "판매내역")) {
+                    NavigationLink(
+                        destination: MyProductsListView(
+                            products: myProducts,
+                            title: "판매내역",
+                            emptyTitle: "판매내역이 없습니다",
+                            emptyMessage: "아직 등록한 판매 상품이 없습니다."
+                        )
+                    ) {
                         HStack(spacing: Theme.Spacing.md) {
                             Image(systemName: "text.book.closed")
                                 .foregroundColor(Theme.Colors.textPrimary)
@@ -91,7 +98,14 @@ struct ProfileView: View {
 
                 // My Interests
                 Section(header: Text("나의 관심").foregroundColor(Theme.Colors.textSecondary)) {
-                    NavigationLink(destination: MyProductsListView(products: likedProducts, title: "관심목록")) {
+                    NavigationLink(
+                        destination: MyProductsListView(
+                            products: likedProducts,
+                            title: "관심목록",
+                            emptyTitle: "관심목록이 없습니다",
+                            emptyMessage: "아직 관심 등록한 상품이 없습니다."
+                        )
+                    ) {
                         HStack(spacing: Theme.Spacing.md) {
                             Image(systemName: "heart")
                                 .foregroundColor(Theme.Colors.textPrimary)
@@ -241,6 +255,8 @@ struct ProfileView: View {
 private struct MyProductsListView: View {
     let products: [Product]
     var title: String = "목록"
+    var emptyTitle: String = "상품이 없습니다"
+    var emptyMessage: String = "아직 등록된 상품이 없습니다."
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -249,8 +265,8 @@ private struct MyProductsListView: View {
 
             if products.isEmpty {
                 EmptyStateView(
-                    title: "상품이 없습니다",
-                    message: "아직 등록된(관심있는) 상품이 없습니다.",
+                    title: emptyTitle,
+                    message: emptyMessage,
                     systemImage: "cube.box",
                     actionTitle: "홈으로 가기"
                 ) {

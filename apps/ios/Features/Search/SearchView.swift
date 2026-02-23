@@ -5,6 +5,7 @@ struct SearchView: View {
     @State private var isSearching = false
     @State private var results: [Product] = []
     @State private var recentSearches: [String] = UserDefaults.standard.stringArray(forKey: "recentSearches") ?? []
+    @State private var searchTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -25,8 +26,10 @@ struct SearchView: View {
 
                     if !searchText.isEmpty {
                         Button(action: {
+                            searchTask?.cancel()
                             searchText = ""
                             results = []
+                            isSearching = false
                         }) {
                             Image(systemName: "xmark.circle.fill")
                                 .foregroundColor(Theme.Colors.textMuted)
@@ -133,53 +136,91 @@ struct SearchView: View {
                 )
             }
         }
+        .onChange(of: searchText) {
+            scheduleDebouncedSearch(for: searchText)
+        }
     }
 
-    private func performSearch() {
+    private func performSearch(saveToRecents: Bool = true) {
         let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !query.isEmpty else { return }
+        searchTask?.cancel()
+        Task {
+            await runSearch(query: query, saveToRecents: saveToRecents)
+        }
+    }
 
-        // Save to recents
+    private func scheduleDebouncedSearch(for text: String) {
+        searchTask?.cancel()
+        let query = text.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !query.isEmpty else {
+            isSearching = false
+            results = []
+            return
+        }
+
+        searchTask = Task {
+            try? await Task.sleep(nanoseconds: 300_000_000)
+            guard !Task.isCancelled else { return }
+            await runSearch(query: query, saveToRecents: false)
+        }
+    }
+
+    private func updateRecentSearches(with query: String) {
         var recents = recentSearches
         recents.removeAll { $0 == query }
         recents.insert(query, at: 0)
         if recents.count > 10 { recents = Array(recents.prefix(10)) }
         recentSearches = recents
         UserDefaults.standard.set(recents, forKey: "recentSearches")
+    }
 
-        isSearching = true
-        Task {
-            do {
-                let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
-                let response: ProductListResponse = try await APIClient.shared.request(
-                    endpoint: "/products?q=\(encoded)",
-                    needsAuth: false
+    private func runSearch(query: String, saveToRecents: Bool) async {
+        if saveToRecents {
+            await MainActor.run {
+                updateRecentSearches(with: query)
+            }
+        }
+
+        await MainActor.run {
+            isSearching = true
+        }
+
+        do {
+            let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+            let response: ProductListResponse = try await APIClient.shared.request(
+                endpoint: "/products?q=\(encoded)",
+                needsAuth: false
+            )
+            let fetched = response.products.map { p in
+                Product(
+                    id: UUID(uuidString: p.id) ?? UUID(),
+                    title: p.title,
+                    creator: p.seller_name ?? "알 수 없는 판매자",
+                    priceCents: p.price_cents,
+                    status: p.status,
+                    likes: p.likes_count ?? 0,
+                    thumbnailUrl: p.thumbnail_url,
+                    createdAt: p.created_at,
+                    chatCount: p.chat_count ?? 0
                 )
-                let fetched = response.products.map { p in
-                    Product(
-                        id: UUID(uuidString: p.id) ?? UUID(),
-                        title: p.title,
-                        creator: p.seller_name ?? "알 수 없는 판매자",
-                        priceCents: p.price_cents,
-                        status: p.status,
-                        likes: p.likes_count ?? 0,
-                        thumbnailUrl: p.thumbnail_url,
-                        createdAt: p.created_at,
-                        chatCount: p.chat_count ?? 0
-                    )
-                }
-                await MainActor.run {
-                    self.results = fetched
-                    self.isSearching = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.isSearching = false
-                    NotificationCenter.default.post(
-                        name: .showToast,
-                        object: Toast(message: (error as? APIError)?.userMessage ?? "검색 실패", style: .error)
-                    )
-                }
+            }
+            await MainActor.run {
+                let current = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard current == query else { return }
+                results = fetched
+                isSearching = false
+            }
+        } catch {
+            await MainActor.run {
+                let current = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard current == query else { return }
+                isSearching = false
+                NotificationCenter.default.post(
+                    name: .showToast,
+                    object: Toast(message: (error as? APIError)?.userMessage ?? "검색 실패", style: .error)
+                )
             }
         }
     }

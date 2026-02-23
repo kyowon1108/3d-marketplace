@@ -51,33 +51,28 @@ struct ProcessingGateView: View {
                                     .scaledToFit()
                                     .frame(width: 250, height: 250)
                                     .opacity(0.3)
-                                
-                                Image("FXScanSweep")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 200, height: 200)
-                                    .opacity(0.4)
-                                    .offset(x: animateGraphic ? 20 : -20)
+                                    .offset(y: animateGraphic ? -10 : 10)
                             } else if imgName == "GraphicModeling" {
                                 Image("FXGlowRing")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 250, height: 250)
                                     .opacity(0.3)
-                                    .rotationEffect(.degrees(animateGraphic ? 360 : 0))
+                                    .offset(y: animateGraphic ? -10 : 10)
                             } else if imgName == "GraphicUpload" {
                                 Image("FXUploadParticles")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 200, height: 200)
                                     .opacity(0.4)
-                                    .offset(y: animateGraphic ? -20 : 20)
+                                    .offset(y: animateGraphic ? -10 : 10)
                             } else if imgName == "GraphicVerify" {
                                 Image("FXVerifySpark")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 200, height: 200)
-                                    .opacity(animateGraphic ? 0.4 : 0.1)
+                                    .opacity(0.4)
+                                    .offset(y: animateGraphic ? -10 : 10)
                             }
                             
                             // Main Cover

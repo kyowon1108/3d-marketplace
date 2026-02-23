@@ -144,28 +144,49 @@ struct ProductDetailView: View {
                         // iOS 17 Native 3D Rendering (using SceneKit for UI embed)
                         Inline3DPreview(url: modelURL)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if arAvailability == "READY" && !isDownloadingModel {
-                        VStack(spacing: Theme.Spacing.md) {
-                            Image(systemName: "cube.transparent")
-                                .font(.system(size: 80))
-                                .foregroundColor(Theme.Colors.violetAccent.opacity(0.8))
-                                .shadow(color: Theme.Colors.violetAccent.opacity(0.3), radius: 10)
-                            
-                            Text("3D 모델 렌더링 준비됨")
-                                .font(.headline)
-                                .foregroundColor(Theme.Colors.textSecondary)
-                        }
-                    } else if isDownloadingModel {
-                        VStack(spacing: Theme.Spacing.md) {
-                            ProgressView().tint(Theme.Colors.violetAccent).scaleEffect(1.5)
-                            Text("3D 에셋 불러오는 중...")
-                                .font(.subheadline)
-                                .foregroundColor(Theme.Colors.textSecondary)
+                    } else if let thumbnail = productDetail?.thumbnail_url, let thumbURL = URL(string: thumbnail) {
+                        AsyncImage(url: thumbURL) { phase in
+                            switch phase {
+                            case .success(let image):
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    .clipped()
+                            case .empty:
+                                ProgressView().tint(Theme.Colors.violetAccent)
+                            default:
+                                Image(systemName: "cube.transparent")
+                                    .font(.system(size: 80))
+                                    .foregroundColor(Theme.Colors.violetAccent.opacity(0.2))
+                            }
                         }
                     } else {
                         Image(systemName: "cube.transparent")
                             .font(.system(size: 80))
                             .foregroundColor(Theme.Colors.violetAccent.opacity(0.2))
+                    }
+                }
+                .overlay {
+                    if isDownloadingModel {
+                        VStack(spacing: Theme.Spacing.sm) {
+                            Text("3D 에셋 다운로드 중...")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundColor(.white)
+
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .tint(Theme.Colors.violetAccent)
+                                .frame(width: 180)
+                        }
+                        .padding(.horizontal, Theme.Spacing.md)
+                        .padding(.vertical, Theme.Spacing.sm)
+                        .background(Color.black.opacity(0.65))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .stroke(Color.white.opacity(0.2), lineWidth: 1)
+                        )
                     }
                 }
             }
@@ -179,6 +200,8 @@ struct ProductDetailView: View {
                 impact.impactOccurred()
                 if downloadedModelURL != nil {
                     isArPresented = true
+                } else if isDownloadingModel {
+                    AppToast(message: "모델 다운로드 중입니다. 잠시만 기다려주세요.", style: .info)
                 } else if arAvailability == "READY" {
                     downloadArModel()
                 }
@@ -186,11 +209,11 @@ struct ProductDetailView: View {
                 HStack(spacing: 8) {
                     if isDownloadingModel {
                         ProgressView().tint(.white).scaleEffect(0.8)
-                        Text("다운로드 중...")
+                        Text("AR 준비 중...")
                     } else {
                         Image(systemName: "arkit")
                             .font(.system(size: 16, weight: .bold))
-                        Text(downloadedModelURL != nil ? "AR로 보기" : (arAvailability == "READY" ? "3D 모델 불러오기" : "AR 사용 불가"))
+                        Text(arAvailability == "NONE" ? "AR 사용 불가" : "AR로 보기")
                     }
                 }
                 .font(.system(size: 14, weight: .bold))
@@ -204,9 +227,9 @@ struct ProductDetailView: View {
             }
             .padding(Theme.Spacing.md)
             .padding(.bottom, Theme.Spacing.md)
-            .disabled(productDetail == nil || arAvailability == "NONE" || isDownloadingModel)
-            .accessibilityLabel(downloadedModelURL != nil ? "AR로 보기" : "3D 모델 불러오기")
-            .accessibilityHint("증강현실 화면으로 이동하거나 AR 모델을 다운로드합니다.")
+            .disabled(productDetail == nil || arAvailability == "NONE")
+            .accessibilityLabel("AR로 보기")
+            .accessibilityHint("증강현실 화면으로 이동하거나 모델 다운로드 상태를 확인합니다.")
         }
     }
 
@@ -239,8 +262,10 @@ struct ProductDetailView: View {
                     .font(.system(size: 13))
                     .foregroundColor(Theme.Colors.textSecondary)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -538,6 +563,11 @@ struct ProductDetailView: View {
             await MainActor.run {
                 self.arAsset = response
                 self.arAvailability = response.availability
+            }
+            await MainActor.run {
+                if response.availability == "READY", downloadedModelURL == nil, !isDownloadingModel {
+                    downloadArModel()
+                }
             }
         } catch {
             await MainActor.run {

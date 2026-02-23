@@ -3,6 +3,15 @@ import SwiftUI
 struct SellNewView: View {
     @State private var viewModel = SellNewViewModel()
     @State private var showCaptureTutorial = false
+
+    private var shouldHideTabBar: Bool {
+        switch viewModel.currentStep {
+        case .intro, .capture, .modeling, .upload:
+            return true
+        case .publish, .success:
+            return false
+        }
+    }
     
     var body: some View {
         Group {
@@ -38,6 +47,8 @@ struct SellNewView: View {
                 }
             }
         }
+        .toolbar(shouldHideTabBar ? .hidden : .visible, for: .tabBar)
+        .animation(.easeInOut(duration: 0.25), value: shouldHideTabBar)
     }
     
     @ViewBuilder
@@ -55,7 +66,7 @@ struct SellNewView: View {
                                 .font(.headline)
                                 .foregroundColor(Theme.Colors.textPrimary)
                             
-                            if let uploadedAssetId = viewModel.uploadedAssetId {
+                            if viewModel.uploadedAssetId != nil {
                                 // Captured 3D Model Card
                                 VStack(alignment: .leading, spacing: Theme.Spacing.md) {
                                     HStack {
@@ -80,21 +91,6 @@ struct SellNewView: View {
                                         .foregroundColor(Theme.Colors.violetAccent)
                                         .accessibilityLabel("3D 모델 다시 스캔")
                                     }
-
-                                    NavigationLink(destination: UploadStatusView(assetId: uploadedAssetId)) {
-                                        HStack {
-                                            Image(systemName: "arrow.triangle.2.circlepath.circle.fill")
-                                            Text("업로드 상태 보기")
-                                        }
-                                        .font(.subheadline.weight(.semibold))
-                                        .foregroundColor(Theme.Colors.textPrimary)
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.vertical, 10)
-                                        .background(Theme.Colors.bgPrimary)
-                                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                                    }
-                                    .accessibilityLabel("업로드 상태 보기")
-                                    .accessibilityHint("업로드 상태 추적 화면으로 이동합니다.")
                                 }
                                 .padding()
                                 .background(Theme.Colors.bgSecondary)
@@ -188,12 +184,13 @@ struct SellNewView: View {
                         }
                     }
                     .padding(Theme.Spacing.md)
-                    .padding(.bottom, 100)
+                    .padding(.bottom, 120)
                 }
-                .ignoresSafeArea(.keyboard, edges: .bottom)
-                
-                VStack {
-                    Spacer()
+                .scrollDismissesKeyboard(.interactively)
+            }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                VStack(spacing: 0) {
+                    Divider().background(Color.white.opacity(0.1))
                     PrimaryButton(
                         title: "상품 등록하기",
                         isLoading: viewModel.isPublishing,
@@ -202,8 +199,10 @@ struct SellNewView: View {
                         viewModel.publishProduct()
                     }
                     .padding(.horizontal, Theme.Spacing.md)
-                    .padding(.bottom, 20)
+                    .padding(.top, Theme.Spacing.sm)
+                    .padding(.bottom, Theme.Spacing.sm)
                 }
+                .background(Theme.Colors.bgPrimary.opacity(0.95))
             }
             .navigationTitle("상품 등록")
             .navigationBarTitleDisplayMode(.inline)
