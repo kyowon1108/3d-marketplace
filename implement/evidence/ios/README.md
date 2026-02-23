@@ -7,3 +7,6 @@
 4. buyer AR placement + model swap
 5. chat reconnect fallback
 6. auth dev-minimal flow
+
+## Latest Evidence
+1. `2026-02-23_ios_ux_alignment.md`

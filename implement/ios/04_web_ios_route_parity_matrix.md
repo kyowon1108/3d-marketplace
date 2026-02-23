@@ -7,10 +7,10 @@
 |---|---|---|---|
 | `/` | Home | `GET /v1/products` | 피드형 목록 + 로딩/빈상태 |
 | `/products` | Product List | `GET /v1/products` | 필터/정렬/페이징 상태 포함 |
-| `/products/[productRef]` | Product Detail | `GET /v1/products/{id}`, `GET /v1/products/{id}/ar-asset`, `POST /v1/products/{id}/chat-rooms` | 인앱 AR 기본 CTA |
-| `/search` | Search | `GET /v1/products?q=...` | 최근 검색 + 빈결과 카피 |
+| `/products/[productRef]` | Product Detail | `GET /v1/products/{id}`, `GET /v1/products/{id}/ar-asset`, `POST /v1/products/{id}/chat-rooms`, `POST /v1/products/{id}/purchase` | 인앱 AR + 채팅 + 구매 CTA, 구매 후 SOLD_OUT 동기화 |
+| `/search` | Search | `GET /v1/products?q=...` | 홈 내비게이션 검색 버튼으로 진입, 최근 검색 + 빈결과 카피 |
 | `/app/sell/new` | Sell New | `POST /v1/model-assets/uploads/init`, `POST /v1/model-assets/uploads/complete`, `POST /v1/products/publish` | iOS 로컬 모델링 기준 |
-| `/app/reconstructions/[jobId]` | Upload/Publish Status | `GET /v1/model-assets/{assetId}` | 레거시 경로명 유지, 의미는 업로드 상태 |
+| `/app/reconstructions/[jobId]` | Upload/Publish Status | `GET /v1/model-assets/{assetId}` | 판매 폼 업로드 완료 카드에서 상태 화면 진입 |
 | `/app/inbox` | Inbox | `GET /v1/chat-rooms` | 빈상태/지연상태 안내 포함 |
 | `/app/inbox/[roomId]` | Chat Room | `GET /v1/chat-rooms/{roomId}/messages`, `POST /v1/chat-rooms/{roomId}/messages`, `WS /v1/chats/{roomId}` | WS fallback HTTP |
 | `/app/profile` | Profile | `GET /v1/me/summary`, `GET /v1/auth/me` | 통계 카드 상태 포함 |
