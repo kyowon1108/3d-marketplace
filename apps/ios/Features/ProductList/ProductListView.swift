@@ -40,10 +40,10 @@ struct ProductListView: View {
                     } else if filteredProducts.isEmpty {
                         Spacer()
                         EmptyStateView(
-                            title: searchText.isEmpty ? "아직 등록된 상품이 없네요" : "검색 결과가 없습니다",
-                            message: searchText.isEmpty ? "가장 먼저 나만의 3D 에셋을 캡처해서 마켓플레이스에 올려보세요." : "'\(searchText)'에 일치하는 3D 모델을 찾을 수 없습니다.",
+                            title: searchText.isEmpty ? "근처에 3D 모델이 텅 비어있네요." : "검색 결과가 없습니다",
+                            message: searchText.isEmpty ? "가장 먼저 나만의 3D 에셋을 캡처해서 마켓플레이스에 올려보세요!" : "'\(searchText)'에 안타깝게도 일치하는 모델이 없어요.",
                             systemImage: "magnifyingglass",
-                            actionTitle: searchText.isEmpty ? "+ 새로운 3D 모델 만들기" : nil
+                            actionTitle: searchText.isEmpty ? "+ 새로운 3D 모델 캡처하기" : nil
                         ) {
                             if searchText.isEmpty {
                                 NotificationCenter.default.post(name: .switchToSellTab, object: nil)

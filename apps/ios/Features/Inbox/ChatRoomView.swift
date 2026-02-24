@@ -68,6 +68,16 @@ struct ChatRoomView: View {
                     ScrollView {
                         ScrollViewReader { proxy in
                             LazyVStack(spacing: Theme.Spacing.md) {
+                                // System Safety Warning
+                                Text("직거래를 권장하며, 외부 채널 유도나 선입금 요구에 주의하세요.")
+                                    .font(.caption)
+                                    .foregroundColor(Theme.Colors.textSecondary)
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(Theme.Colors.bgSecondary)
+                                    .clipShape(Capsule())
+                                    .padding(.top, Theme.Spacing.md)
+                                    
                                 ForEach(messages) { msg in
                                     MessageBubble(message: msg)
                                         .id(msg.id)

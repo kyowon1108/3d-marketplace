@@ -21,6 +21,8 @@ struct ProductResponse: Decodable, Identifiable {
     let seller_name: String?
     let seller_avatar_url: String?
     let seller_location_name: String?
+    let seller_joined_at: String?
+    let seller_trade_count: Int?
     let thumbnail_url: String?
     let status: String
     let chat_count: Int?
