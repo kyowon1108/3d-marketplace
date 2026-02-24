@@ -38,6 +38,8 @@ class ProductResponse(BaseModel):
     views_count: int = 0
     chat_count: int = 0
     seller_location_name: str | None = None
+    seller_joined_at: datetime | None = None
+    seller_trade_count: int = 0
     is_liked: bool | None = None
 
 

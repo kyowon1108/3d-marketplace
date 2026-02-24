@@ -41,15 +41,26 @@ def _build_product_response(
     liked_ids: set[uuid.UUID] | None = None,
     is_authed: bool = False,
     chat_count: int = 0,
+    db: Session | None = None,
 ) -> ProductResponse:
     # Seller info
     seller_name = ""
     seller_avatar_url = None
     seller_location_name = None
+    seller_joined_at = None
+    seller_trade_count = 0
+    
     if product.seller:
         seller_name = product.seller.name
         seller_avatar_url = product.seller.avatar_url
         seller_location_name = product.seller.location_name
+        seller_joined_at = product.seller.created_at
+        
+        if db:
+            from sqlalchemy import func
+            from app.models.purchase import Purchase
+            trade_count = db.query(func.count(Purchase.id)).join(Product, Purchase.product_id == Product.id).filter(Product.seller_id == product.seller_id).scalar() or 0
+            seller_trade_count = trade_count
 
     # Thumbnail URL from asset images
     thumbnail_url = None
@@ -81,6 +92,8 @@ def _build_product_response(
         views_count=product.views_count,
         chat_count=chat_count,
         seller_location_name=seller_location_name,
+        seller_joined_at=seller_joined_at,
+        seller_trade_count=seller_trade_count,
         is_liked=is_liked,
     )
 
@@ -176,6 +189,7 @@ def list_products(
                 liked_ids=liked_ids,
                 is_authed=is_authed,
                 chat_count=chat_counts.get(p.id, 0),
+                db=db,
             )
             for p in products
         ],
@@ -210,7 +224,7 @@ def get_product(
     chat_count = repo.count_chats(product_id)
 
     return _build_product_response(
-        product, liked_ids=liked_ids, is_authed=is_authed, chat_count=chat_count,
+        product, liked_ids=liked_ids, is_authed=is_authed, chat_count=chat_count, db=db,
     )
 
 
@@ -238,7 +252,7 @@ def update_product(
     db.commit()
 
     product = repo.get_by_id(product_id)
-    return _build_product_response(product)  # type: ignore[arg-type]
+    return _build_product_response(product, db=db)  # type: ignore[arg-type]
 
 
 @router.delete("/{product_id}", status_code=204)
@@ -281,7 +295,7 @@ def change_product_status(
     db.commit()
 
     product = repo.get_by_id(product_id)
-    return _build_product_response(product)  # type: ignore[arg-type]
+    return _build_product_response(product, db=db)  # type: ignore[arg-type]
 
 
 @router.post("/{product_id}/like", response_model=LikeToggleResponse)
@@ -346,7 +360,7 @@ def purchase_product(
         raise HTTPException(status_code=409, detail="Product already purchased")
     db.refresh(purchase)
 
-    product_resp = _build_product_response(product)
+    product_resp = _build_product_response(product, db=db)
     return PurchaseResponse(
         id=purchase.id,
         product_id=purchase.product_id,
