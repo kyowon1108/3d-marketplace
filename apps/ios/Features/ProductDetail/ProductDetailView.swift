@@ -64,6 +64,9 @@ struct ProductDetailView: View {
                     Spacer().frame(height: 100)
                 }
             }
+            .refreshable {
+                fetchProductDetail()
+            }
             .ignoresSafeArea(edges: .top)
 
             // Top Navigation Bar (Floating Back & Share)
@@ -243,6 +246,23 @@ struct ProductDetailView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
+                    } else if downloadedModelURL == nil && arAvailability == "READY" {
+                        Button(action: {
+                            downloadArModel()
+                        }) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "view.3d")
+                                    .font(.system(size: 16, weight: .bold))
+                                Text("3D로 돌려보기")
+                            }
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 12)
+                            .background(Color.black.opacity(0.6))
+                            .clipShape(Capsule())
+                            .overlay(Capsule().stroke(Color.white.opacity(0.3), lineWidth: 1))
+                        }
                     }
                 }
             }
@@ -321,6 +341,17 @@ struct ProductDetailView: View {
                 }
                 .font(.system(size: 13))
                 .foregroundColor(Theme.Colors.textSecondary)
+                
+                // Seller Stats (P0)
+                if let joinedAt = productDetail?.seller_joined_at {
+                    HStack(spacing: 4) {
+                        Text("가입 \(relativeTime(from: joinedAt))")
+                        Text("·")
+                        Text("거래 \(productDetail?.seller_trade_count ?? 0)회")
+                    }
+                    .font(.system(size: 11))
+                    .foregroundColor(Theme.Colors.textMuted)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -639,8 +670,7 @@ struct ProductDetailView: View {
         Task {
             do {
                 let response: ProductResponse = try await APIClient.shared.request(
-                    endpoint: "/products/\(productId.uuidString)",
-                    needsAuth: false
+                    endpoint: "/products/\(productId.uuidString)"
                 )
                 await MainActor.run {
                     self.productDetail = response
@@ -669,11 +699,6 @@ struct ProductDetailView: View {
             await MainActor.run {
                 self.arAsset = response
                 self.arAvailability = response.availability
-            }
-            await MainActor.run {
-                if response.availability == "READY", downloadedModelURL == nil, !isDownloadingModel {
-                    downloadArModel()
-                }
             }
         } catch {
             await MainActor.run {
@@ -911,6 +936,8 @@ struct ProductDetailView: View {
             seller_name: product.seller_name,
             seller_avatar_url: product.seller_avatar_url,
             seller_location_name: product.seller_location_name,
+            seller_joined_at: product.seller_joined_at,
+            seller_trade_count: product.seller_trade_count,
             thumbnail_url: product.thumbnail_url,
             status: "SOLD_OUT",
             chat_count: product.chat_count,
