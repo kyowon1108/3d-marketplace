@@ -30,7 +30,7 @@
 | Product management (수정/삭제/상태) | PASS | — | — | ProductEditView + 판매자 액션 시트 (ellipsis 메뉴) |
 | Profile/Settings screens | PASS | — | — | ProfileEditView + SettingsView + 톱니바퀴 연결 |
 | Seller trust indicators | PASS | — | — | 가입일/거래횟수 표시, mappin 아이콘 |
-| UX polish | PASS | — | — | EmptyState 카피, SOLD_OUT 투명도, 예약중 배지 |
+| UX polish | PASS | `evidence/ios/2026-02-25_cachedimage_polish.md` | — | EmptyState 카피, SOLD_OUT 투명도, 예약중 배지, CachedAsyncImage 에러 fallback |
 
 ## Gate Decision
 - Current Decision: `GO`

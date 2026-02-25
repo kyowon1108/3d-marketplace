@@ -28,23 +28,20 @@ struct ProductListRow: View {
 
                 // Thumbnail image or fallback icon
                 if let urlString = product.thumbnailUrl, let url = URL(string: urlString) {
-                    AsyncImage(url: url) { phase in
-                        switch phase {
-                        case .success(let image):
-                            image
-                                .resizable()
-                                .scaledToFill()
-                        case .empty:
-                            ProgressView()
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        default:
-                            Image(systemName: "cube.fill")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 30, height: 30)
-                                .foregroundColor(Theme.Colors.violetAccent)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
+                    CachedAsyncImage(url: url) { image in
+                        image
+                            .resizable()
+                            .scaledToFill()
+                    } placeholder: {
+                        ProgressView()
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } failure: {
+                        Image(systemName: "cube.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 30, height: 30)
+                            .foregroundColor(Theme.Colors.violetAccent)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
                 } else {
                     Image(systemName: "cube.fill")

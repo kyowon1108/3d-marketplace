@@ -10,6 +10,7 @@ from app.middleware.auth import get_current_user, get_optional_user
 from app.middleware.idempotency import IdempotencyChecker
 from app.models.enums import ImageType, ProductStatus
 from app.models.product import Product
+from app.models.purchase import Purchase
 from app.models.user import User
 from app.repositories.product_like_repo import ProductLikeRepo
 from app.repositories.product_repo import ProductRepo
@@ -49,17 +50,23 @@ def _build_product_response(
     seller_location_name = None
     seller_joined_at = None
     seller_trade_count = 0
-    
+
     if product.seller:
         seller_name = product.seller.name
         seller_avatar_url = product.seller.avatar_url
         seller_location_name = product.seller.location_name
         seller_joined_at = product.seller.created_at
-        
+
         if db:
             from sqlalchemy import func
-            from app.models.purchase import Purchase
-            trade_count = db.query(func.count(Purchase.id)).join(Product, Purchase.product_id == Product.id).filter(Product.seller_id == product.seller_id).scalar() or 0
+
+            trade_count = (
+                db.query(func.count(Purchase.id))
+                .join(Product, Purchase.product_id == Product.id)
+                .filter(Product.seller_id == product.seller_id)
+                .scalar()
+                or 0
+            )
             seller_trade_count = trade_count
 
     # Thumbnail URL from asset images

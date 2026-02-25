@@ -9,6 +9,7 @@ struct ChatRoomView: View {
     @State private var wsConnected = false
     @State private var productDetail: ProductResponse?
     @Environment(\.dismiss) var dismiss
+    @FocusState private var isInputFocused: Bool
 
     private let wsManager = WebSocketManager()
 
@@ -97,7 +98,15 @@ struct ChatRoomView: View {
                                     }
                                 }
                             }
+                            .onChange(of: isInputFocused) { _, newValue in
+                                if newValue, let last = messages.last {
+                                    withAnimation {
+                                        proxy.scrollTo(last.id, anchor: .bottom)
+                                    }
+                                }
+                            }
                         }
+                        .scrollDismissesKeyboard(.interactively)
                     }
                 }
 
@@ -115,6 +124,7 @@ struct ChatRoomView: View {
                                     .padding(.vertical, 10)
                             }
                             TextEditor(text: $messageText)
+                                .focused($isInputFocused)
                                 .frame(minHeight: 36, maxHeight: 100)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)

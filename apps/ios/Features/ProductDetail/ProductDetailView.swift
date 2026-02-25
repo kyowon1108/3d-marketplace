@@ -16,8 +16,7 @@ struct ProductDetailView: View {
     // R1: AR asset download
     @State private var arAsset: ArAssetResponse?
     @State private var arAvailability: String = "NONE"
-    @State private var downloadedModelURL: URL?
-    @State private var isDownloadingModel = false
+    @StateObject private var modelDownloader = ModelDownloader()
     @State private var wallSnapEnabled = false
     @State private var useQuickLookFallback = true
 
@@ -32,6 +31,7 @@ struct ProductDetailView: View {
     @State private var createdChatRoom: ChatRoomResponse?
     @State private var showPurchaseConfirmation = false
     @State private var isPurchasing = false
+    @State private var showDragHint = false
 
     // Seller management
     @State private var showSellerActions = false
@@ -199,44 +199,67 @@ struct ProductDetailView: View {
                     Theme.Colors.bgSecondary
                     if isLoading {
                         ProgressView().tint(Theme.Colors.violetAccent).scaleEffect(1.5)
-                    } else if let modelURL = downloadedModelURL {
+                    } else if let modelURL = modelDownloader.downloadedURL {
                         // iOS 17 Native 3D Rendering (using SceneKit for UI embed)
-                        Inline3DPreview(url: modelURL)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else if let thumbnail = productDetail?.thumbnail_url, let thumbURL = URL(string: thumbnail) {
-                        AsyncImage(url: thumbURL) { phase in
-                            switch phase {
-                            case .success(let image):
-                                image
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    .clipped()
-                            case .empty:
-                                ProgressView().tint(Theme.Colors.violetAccent)
-                            default:
-                                Image(systemName: "cube.transparent")
-                                    .font(.system(size: 80))
-                                    .foregroundColor(Theme.Colors.violetAccent.opacity(0.2))
+                        Inline3DPreview(url: modelURL) {
+                            // Show drag hint if not seen before
+                            if !UserDefaults.standard.bool(forKey: "hasSeenInline3DHint_v1") {
+                                showDragHint = true
+                                UserDefaults.standard.set(true, forKey: "hasSeenInline3DHint_v1")
+                                
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+                                    withAnimation { showDragHint = false }
+                                }
+                            }
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .overlay {
+                            if showDragHint {
+                                HintOverlay()
+                                    .transition(.opacity.combined(with: .scale(scale: 0.9)))
                             }
                         }
                     } else {
-                        Image(systemName: "cube.transparent")
-                            .font(.system(size: 80))
-                            .foregroundColor(Theme.Colors.violetAccent.opacity(0.2))
+                        CachedAsyncImage(url: URL(string: productDetail?.thumbnail_url ?? "")) { image in
+                            image
+                                .resizable()
+                                .scaledToFill()
+                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                .clipped()
+                        } placeholder: {
+                            ZStack {
+                                Color.black
+                                ProgressView()
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        } failure: {
+                            ZStack {
+                                Color.black
+                                Image(systemName: "cube.transparent")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 48, height: 48)
+                                    .foregroundColor(Theme.Colors.violetAccent.opacity(0.6))
+                            }
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        }
                     }
                 }
                 .overlay {
-                    if isDownloadingModel {
+                    if modelDownloader.isDownloading {
                         VStack(spacing: Theme.Spacing.sm) {
                             Text("3D 에셋 다운로드 중...")
                                 .font(.subheadline.weight(.semibold))
                                 .foregroundColor(.white)
 
-                            ProgressView()
+                            ProgressView(value: modelDownloader.progress)
                                 .progressViewStyle(.linear)
                                 .tint(Theme.Colors.violetAccent)
                                 .frame(width: 180)
+
+                            Text("\(Int(modelDownloader.progress * 100))%")
+                                .font(.caption.monospacedDigit())
+                                .foregroundColor(Theme.Colors.textSecondary)
                         }
                         .padding(.horizontal, Theme.Spacing.md)
                         .padding(.vertical, Theme.Spacing.sm)
@@ -246,7 +269,7 @@ struct ProductDetailView: View {
                             RoundedRectangle(cornerRadius: 12)
                                 .stroke(Color.white.opacity(0.2), lineWidth: 1)
                         )
-                    } else if downloadedModelURL == nil && arAvailability == "READY" {
+                    } else if modelDownloader.downloadedURL == nil && arAvailability == "READY" {
                         Button(action: {
                             downloadArModel()
                         }) {
@@ -274,18 +297,18 @@ struct ProductDetailView: View {
             Button(action: {
                 let impact = UIImpactFeedbackGenerator(style: .medium)
                 impact.impactOccurred()
-                if downloadedModelURL != nil {
+                if modelDownloader.downloadedURL != nil {
                     isArPresented = true
-                } else if isDownloadingModel {
+                } else if modelDownloader.isDownloading {
                     AppToast(message: "모델 다운로드 중입니다. 잠시만 기다려주세요.", style: .info)
                 } else if arAvailability == "READY" {
                     downloadArModel()
                 }
             }) {
                 HStack(spacing: 8) {
-                    if isDownloadingModel {
+                    if modelDownloader.isDownloading {
                         ProgressView().tint(.white).scaleEffect(0.8)
-                        Text("AR 준비 중...")
+                        Text("AR 준비 중... \(Int(modelDownloader.progress * 100))%")
                     } else {
                         Image(systemName: "arkit")
                             .font(.system(size: 16, weight: .bold))
@@ -306,6 +329,13 @@ struct ProductDetailView: View {
             .disabled(productDetail == nil || arAvailability == "NONE")
             .accessibilityLabel("AR로 보기")
             .accessibilityHint("증강현실 화면으로 이동하거나 모델 다운로드 상태를 확인합니다.")
+            .onChange(of: modelDownloader.downloadedURL) { _, newURL in
+                if newURL != nil {
+                    // Haptic feedback when download completes
+                    let impact = UIImpactFeedbackGenerator(style: .medium)
+                    impact.impactOccurred()
+                }
+            }
         }
     }
 
@@ -313,19 +343,12 @@ struct ProductDetailView: View {
     private func sellerProfileSection() -> some View {
         HStack(spacing: Theme.Spacing.md) {
             // Avatar
-            AsyncImage(url: URL(string: productDetail?.seller_avatar_url ?? "")) { phase in
-                switch phase {
-                case .empty:
-                    Circle().fill(Theme.Colors.bgSecondary)
-                case .success(let img):
-                    img.resizable().scaledToFill().clipShape(Circle())
-                case .failure:
-                    Circle().fill(Theme.Colors.bgSecondary).overlay(
-                        Image(systemName: "person.fill").foregroundColor(Theme.Colors.textMuted)
-                    )
-                @unknown default:
-                    EmptyView()
-                }
+            CachedAsyncImage(url: URL(string: productDetail?.seller_avatar_url ?? "")) { image in
+                image.resizable().scaledToFill().clipShape(Circle())
+            } placeholder: {
+                Circle().fill(Theme.Colors.bgSecondary).overlay(
+                    Image(systemName: "person.fill").foregroundColor(Theme.Colors.textMuted)
+                )
             }
             .frame(width: 48, height: 48)
 
@@ -363,10 +386,19 @@ struct ProductDetailView: View {
     private func productInfoSection() -> some View {
         VStack(alignment: .leading, spacing: Theme.Spacing.md) {
             if let product = productDetail {
-                // Title
-                Text(product.title)
-                    .font(.system(size: 20, weight: .semibold))
-                    .foregroundColor(Theme.Colors.textPrimary)
+                HStack(alignment: .bottom) {
+                    // Title
+                    Text(product.title)
+                        .font(.system(size: 20, weight: .semibold))
+                        .foregroundColor(Theme.Colors.textPrimary)
+                    
+                    if let user = authManager.currentUser, user.id != product.seller_id {
+                        Spacer()
+                        Text("가격 제안은 채팅으로 문의하세요.")
+                            .font(.caption2)
+                            .foregroundColor(Theme.Colors.textMuted)
+                    }
+                }
 
                 // Category and Time
                 Text(relativeTime(from: product.created_at))
@@ -579,7 +611,7 @@ struct ProductDetailView: View {
 
     @ViewBuilder
     private func arOverlayView() -> some View {
-        if let modelURL = downloadedModelURL {
+        if let modelURL = modelDownloader.downloadedURL {
             ZStack {
                 if #available(iOS 17.0, *), !useQuickLookFallback {
                     ARPlacementView(
@@ -717,38 +749,19 @@ struct ProductDetailView: View {
             return
         }
 
-        isDownloadingModel = true
-        let assetId = arAsset.asset_id ?? productId.uuidString
-        let destURL = FileManager.default.temporaryDirectory.appendingPathComponent("\(assetId).usdz")
-
-        if FileManager.default.fileExists(atPath: destURL.path) {
-            downloadedModelURL = destURL
-            isDownloadingModel = false
+        guard let downloadURL = URL(string: usdzFile.url) else {
+            NotificationCenter.default.post(
+                name: .showToast,
+                object: Toast(message: "잘못된 다운로드 URL입니다.", style: .error)
+            )
             return
         }
 
-        Task {
-            do {
-                guard let downloadURL = URL(string: usdzFile.url) else {
-                    throw APIError.invalidURL
-                }
-                let (tempURL, _) = try await URLSession.shared.download(from: downloadURL)
-                try? FileManager.default.removeItem(at: destURL)
-                try FileManager.default.moveItem(at: tempURL, to: destURL)
-                await MainActor.run {
-                    self.downloadedModelURL = destURL
-                    self.isDownloadingModel = false
-                }
-            } catch {
-                await MainActor.run {
-                    self.isDownloadingModel = false
-                    NotificationCenter.default.post(
-                        name: .showToast,
-                        object: Toast(message: "모델 다운로드에 실패했습니다.", style: .error)
-                    )
-                }
-            }
-        }
+        let assetId = arAsset.asset_id ?? productId.uuidString
+        let cachesDir = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let destURL = cachesDir.appendingPathComponent("\(assetId).usdz")
+
+        modelDownloader.download(from: downloadURL, destination: destURL)
     }
 
     private func toggleLike() {
@@ -953,6 +966,7 @@ struct ProductDetailView: View {
 // MARK: - Dedicated Inline 3D Preview (SceneKit)
 private struct Inline3DPreview: View {
     let url: URL
+    var onSceneLoaded: (() -> Void)? = nil
     @State private var scene: SCNScene?
     
     var body: some View {
@@ -978,6 +992,7 @@ private struct Inline3DPreview: View {
                 let loadedScene = try SCNScene(url: url, options: nil)
                 await MainActor.run {
                     self.scene = loadedScene
+                    self.onSceneLoaded?()
                 }
             } catch {
                 #if DEBUG
@@ -985,5 +1000,32 @@ private struct Inline3DPreview: View {
                 #endif
             }
         }
+    }
+}
+
+// MARK: - 3D Drag Hint Overlay
+private struct HintOverlay: View {
+    @State private var swayOffset: CGFloat = -12
+
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: "hand.draw.fill")
+                .font(.system(size: 32))
+                .offset(x: swayOffset)
+                .onAppear {
+                    withAnimation(
+                        .easeInOut(duration: 0.8)
+                        .repeatForever(autoreverses: true)
+                    ) {
+                        swayOffset = 12
+                    }
+                }
+            Text("드래그해서 돌려보세요")
+                .font(.subheadline.weight(.semibold))
+        }
+        .foregroundColor(.white)
+        .padding(16)
+        .background(Color.black.opacity(0.6))
+        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 }

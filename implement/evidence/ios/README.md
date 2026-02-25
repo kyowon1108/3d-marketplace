@@ -22,3 +22,4 @@
 2. `2026-02-22_ios_auth_ws.md`
 3. `2026-02-22_ws_broadcast.md`
 4. `2026-02-23_ios_ux_alignment.md`
+5. `2026-02-25_cachedimage_polish.md`

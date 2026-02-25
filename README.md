@@ -190,7 +190,7 @@ SwiftUI 기반. 11개 화면으로 웹 라우트와 1:1 대응. 로그인 필수
 ```
 apps/ios/
 ├── App/                  앱 진입점 (MarketplaceApp, ContentView, AppEnvironment)
-├── DesignSystem/          공용 컴포넌트, Theme, Modifiers
+├── DesignSystem/          공용 컴포넌트 (CachedAsyncImage, Theme, Modifiers)
 ├── Features/              화면별 View + ViewModel
 │   ├── Auth/
 │   ├── Home/
@@ -207,7 +207,7 @@ apps/ios/
 │   ├── Auth/              AuthManager, KeychainHelper
 │   ├── CaptureKit/        SweepCaptureEngine, FrameSelector
 │   ├── ModelingKit/       LocalModelBuilder, ModelExportCoordinator (치수 추출)
-│   └── Networking/        APIClient, WebSocketManager, APIContracts
+│   └── Networking/        APIClient, WebSocketManager, ModelDownloader, APIContracts
 └── Resources/             Assets, 설정 파일
 ```
 

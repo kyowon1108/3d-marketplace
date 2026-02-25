@@ -3,6 +3,7 @@ import SwiftUI
 struct ProductListView: View {
     @State private var searchText = ""
     @State private var selectedCategory = "최신순"
+    @State private var hideCompleted = false
     let categories = ["최신순", "인기순", "무료"]
     
     @State private var products: [Product] = []
@@ -17,7 +18,8 @@ struct ProductListView: View {
                 $0.title.localizedCaseInsensitiveContains(searchText) || $0.creator.localizedCaseInsensitiveContains(searchText)
             }
         }
-        return applyCategoryFilter(to: searched)
+        let filteredByStatus = hideCompleted ? searched.filter { $0.status == "FOR_SALE" } : searched
+        return applyCategoryFilter(to: filteredByStatus)
     }
     
     var body: some View {
@@ -28,6 +30,16 @@ struct ProductListView: View {
                 VStack(spacing: 0) {
                     CategoryPills(categories: categories, selectedCategory: $selectedCategory)
                         .padding(.top, Theme.Spacing.xs)
+                    
+                    HStack {
+                        Toggle("판매중인 상품만 보기", isOn: $hideCompleted)
+                            .toggleStyle(SwitchToggleStyle(tint: Theme.Colors.violetAccent))
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, Theme.Spacing.md)
+                    .padding(.bottom, Theme.Spacing.xs)
                     
                     if isLoading {
                         ScrollView {
