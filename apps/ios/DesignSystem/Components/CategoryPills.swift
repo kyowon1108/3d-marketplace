@@ -19,17 +19,13 @@ public struct CategoryPills: View {
                         }
                     }) {
                         Text(category)
-                            .font(.subheadline.weight(.semibold))
+                            .font(.footnote.weight(.semibold))
                             .foregroundColor(selectedCategory == category ? .white : Theme.Colors.textSecondary)
-                            .padding(.horizontal, Theme.Spacing.md)
-                            .padding(.vertical, Theme.Spacing.sm)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
                             .background(
                                 Capsule()
                                     .fill(selectedCategory == category ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
-                            )
-                            .overlay(
-                                Capsule()
-                                    .stroke(selectedCategory == category ? Theme.Colors.neonGlow.opacity(0.5) : Theme.Colors.glassBorder, lineWidth: 1)
                             )
                     }
                     .buttonStyle(.plain)

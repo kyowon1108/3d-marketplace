@@ -50,10 +50,10 @@ struct SearchView: View {
                     HStack(spacing: 8) {
                         Button(action: { selectedCategory = nil; triggerSearchIfNeeded() }) {
                             Text("전체")
-                                .font(.caption.weight(.medium))
+                                .font(.footnote.weight(.semibold))
                                 .foregroundColor(selectedCategory == nil ? .white : Theme.Colors.textSecondary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
                                 .background(selectedCategory == nil ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
                                 .clipShape(Capsule())
                         }
@@ -63,10 +63,10 @@ struct SearchView: View {
                                 triggerSearchIfNeeded()
                             }) {
                                 Text(cat.label)
-                                    .font(.caption.weight(.medium))
+                                    .font(.footnote.weight(.semibold))
                                     .foregroundColor(selectedCategory == cat ? .white : Theme.Colors.textSecondary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
                                     .background(selectedCategory == cat ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
                                     .clipShape(Capsule())
                             }

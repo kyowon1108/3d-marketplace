@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 import time
@@ -20,13 +21,14 @@ _cache: dict[_CacheKey, tuple[dict[str, Any], float]] = {}
 _CACHE_TTL = 300  # 5 minutes
 
 SUGGEST_PROMPT = """\
-이 제품 사진을 보고 한국어 중고거래 마켓플레이스용 상품 등록 정보를 작성해주세요.
+사진 속 제품이 무엇인지 파악하고, 한국어 중고거래 마켓플레이스 상품 등록 정보를 작성해주세요.
+사진을 주의 깊게 관찰하여 제품의 종류, 브랜드, 모델명을 최대한 정확히 식별해주세요.
 
 {dims_section}
 
 아래 JSON 형식으로 응답해주세요:
-- title: 15자 이내, 제품 종류 + 핵심 특징
-- description: 3-5문장. 외관 상태, 용도 포함{dims_instruction}
+- title: 15자 이내, 제품명 + 핵심 특징 (예: "로지텍 MX Master 3 마우스")
+- description: 3-5문장. 제품명, 외관 상태, 용도 포함. 치수는 별도 표시되므로 설명에 넣지 마세요
 - category: 다음 중 하나 — ELECTRONICS, FURNITURE, CLOTHING, BOOKS_MEDIA, \
 SPORTS, LIVING, BEAUTY, HOBBY, OTHER
 - condition: 다음 중 하나 — NEW, LIKE_NEW, USED, WORN (사진 상태 기반 추정)
@@ -43,15 +45,15 @@ def _build_prompt(
     dims_source: str | None,
 ) -> str:
     if dims_width and dims_height and dims_depth:
-        source_label = "LiDAR 정밀 측정" if dims_source == "ios_lidar" else "측정"
+        source_note = "스캐너로 자동 측정된 값" if dims_source == "ios_lidar" else "측정값"
         dims_section = (
-            f"측정 치수: {dims_width}cm × {dims_height}cm"
-            f" × {dims_depth}cm ({source_label})"
+            f"참고 - 이 제품의 실측 크기: 가로 {dims_width}cm × 세로 {dims_height}cm"
+            f" × 높이 {dims_depth}cm ({source_note})"
         )
-        dims_instruction = ". 치수 정보를 설명에 자연스럽게 포함"
+        dims_instruction = ""
         comparison_instruction = (
-            "\n- dims_comparison: 치수를 일상 물건과 비교하는 문구 1문장 "
-            "(예: '일반 노트북보다 약간 큰 크기입니다')"
+            "\n- dims_comparison: 크기를 일상 물건과 비교하는 짧은 문구 "
+            "(예: '손바닥보다 약간 큰 크기')"
         )
     else:
         dims_section = "치수 정보: 없음"
@@ -96,6 +98,55 @@ def _evict_expired() -> None:
         del _cache[k]
 
 
+def _resolve_thumbnail_url(thumbnail_url: str) -> str:
+    """Convert local storage URL to base64 data URL for OpenAI accessibility."""
+    if settings.storage_backend != "local":
+        return thumbnail_url
+
+    # Detect local storage URL by path pattern
+    storage_marker = "/storage/assets/"
+    idx = thumbnail_url.find(storage_marker)
+    if idx == -1:
+        return thumbnail_url
+
+    # Extract storage key (strip query params)
+    storage_key = thumbnail_url[idx + len("/storage/"):].split("?")[0]
+
+    from app.services.storage_service import StorageService
+
+    storage = StorageService()
+    try:
+        file_path = storage.resolve_safe_path(storage_key)
+    except ValueError:
+        logger.warning("ai_suggest_local_resolve_failed", extra={"key": storage_key})
+        return thumbnail_url
+
+    # If exact path not found, search for any image in the asset directory
+    if not file_path.exists():
+        parent = file_path.parent
+        if parent.exists():
+            for candidate in sorted(parent.iterdir()):
+                if candidate.suffix.lower() in {".png", ".jpg", ".jpeg"}:
+                    file_path = candidate
+                    break
+            else:
+                return thumbnail_url
+        else:
+            return thumbnail_url
+
+    data = file_path.read_bytes()
+    # Detect MIME from file magic bytes, not extension (iOS saves JPEG as .png)
+    if data[:2] == b"\xff\xd8":
+        mime = "image/jpeg"
+    elif data[:8] == b"\x89PNG\r\n\x1a\n":
+        mime = "image/png"
+    else:
+        mime = "image/png"
+    b64 = base64.b64encode(data).decode("utf-8")
+    logger.info("ai_suggest_local_thumbnail_resolved", extra={"path": str(file_path)})
+    return f"data:{mime};base64,{b64}"
+
+
 async def suggest_listing(
     thumbnail_url: str,
     dims_width: float | None = None,
@@ -115,14 +166,17 @@ async def suggest_listing(
     client = AsyncOpenAI(api_key=settings.openai_api_key)
     prompt = _build_prompt(dims_width, dims_height, dims_depth, dims_source)
 
+    # Resolve local storage URLs to base64 data URLs for OpenAI accessibility
+    image_url = _resolve_thumbnail_url(thumbnail_url)
+
     response = await client.chat.completions.create(
-        model="gpt-4o-mini",
+        model="gpt-4o",
         messages=[
             {
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": thumbnail_url}},
+                    {"type": "image_url", "image_url": {"url": image_url}},
                 ],
             }
         ],

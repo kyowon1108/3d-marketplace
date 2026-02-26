@@ -40,10 +40,10 @@ struct ProductListView: View {
                                 Task { await fetchData() }
                             }) {
                                 Text("전체")
-                                    .font(.caption.weight(.medium))
+                                    .font(.footnote.weight(.semibold))
                                     .foregroundColor(selectedCategory == nil ? .white : Theme.Colors.textSecondary)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 6)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 8)
                                     .background(selectedCategory == nil ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
                                     .clipShape(Capsule())
                             }
@@ -53,10 +53,10 @@ struct ProductListView: View {
                                     Task { await fetchData() }
                                 }) {
                                     Text(cat.label)
-                                        .font(.caption.weight(.medium))
+                                        .font(.footnote.weight(.semibold))
                                         .foregroundColor(selectedCategory == cat ? .white : Theme.Colors.textSecondary)
-                                        .padding(.horizontal, 12)
-                                        .padding(.vertical, 6)
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 8)
                                         .background(selectedCategory == cat ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
                                         .clipShape(Capsule())
                                 }
@@ -66,15 +66,18 @@ struct ProductListView: View {
                     }
                     .padding(.top, Theme.Spacing.xs)
 
-                    HStack {
-                        Toggle("판매중인 상품만 보기", isOn: $hideCompleted)
-                            .toggleStyle(SwitchToggleStyle(tint: Theme.Colors.violetAccent))
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(Theme.Colors.textSecondary)
+                    HStack(spacing: 6) {
+                        Toggle(isOn: $hideCompleted) {
+                            Text("판매중만")
+                                .font(.footnote.weight(.medium))
+                                .foregroundColor(Theme.Colors.textSecondary)
+                        }
+                        .toggleStyle(SwitchToggleStyle(tint: Theme.Colors.violetAccent))
+                        .fixedSize()
                         Spacer()
                     }
                     .padding(.horizontal, Theme.Spacing.md)
-                    .padding(.bottom, Theme.Spacing.xs)
+                    .padding(.vertical, Theme.Spacing.xs)
                     
                     if isLoading {
                         ScrollView {
