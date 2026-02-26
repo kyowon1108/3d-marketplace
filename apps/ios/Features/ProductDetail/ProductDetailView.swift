@@ -40,6 +40,11 @@ struct ProductDetailView: View {
     @State private var showEditView = false
     @State private var isDeleting = false
 
+    // AR inquiry
+    @State private var arCoordinator: ARPlacementView.Coordinator?
+    @State private var isSendingArInquiry = false
+    @State private var arShareImage: UIImage?
+
     var body: some View {
         ZStack(alignment: .bottom) {
             Theme.Colors.bgPrimary.ignoresSafeArea()
@@ -61,13 +66,27 @@ struct ProductDetailView: View {
                         .padding(Theme.Spacing.md)
 
                     // Bottom padding to avoid action bar overlap
-                    Spacer().frame(height: 100)
+                    Spacer().frame(height: 0)
                 }
             }
             .refreshable {
                 fetchProductDetail()
             }
-            .ignoresSafeArea(edges: .top)
+            .scrollIndicators(.hidden)
+
+            // Fixed dark status bar background + Floating nav bar
+            VStack(spacing: 0) {
+                // Status bar dark background - always fixed at top
+                LinearGradient(
+                    colors: [.black, .black.opacity(0.85), .clear],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: safeAreaTop() + 56)
+                .ignoresSafeArea(edges: .top)
+
+                Spacer()
+            }
 
             // Top Navigation Bar (Floating Back & Share)
             VStack {
@@ -111,15 +130,20 @@ struct ProductDetailView: View {
                     }
                 }
                 .padding(.horizontal, Theme.Spacing.md)
-                // Use safe area inset for top
                 .padding(.top, safeAreaTop() + Theme.Spacing.sm)
                 Spacer()
             }
 
             // 4. Floating Bottom Action Bar (C2C Style)
-            bottomActionBar()
+            VStack {
+                Spacer()
+                bottomActionBar()
+            }
+            .ignoresSafeArea(.container, edges: .bottom)
         }
         .navigationBarHidden(true)
+        .toolbar(.hidden, for: .tabBar)
+        .preferredColorScheme(.dark)
         .fullScreenCover(isPresented: $isArPresented) {
             arOverlayView()
         }
@@ -603,10 +627,9 @@ struct ProductDetailView: View {
                 }
             }
             .padding(.horizontal, Theme.Spacing.md)
-            .padding(.top, Theme.Spacing.md)
-            .padding(.bottom, safeAreaBottom() + Theme.Spacing.sm)
+            .padding(.vertical, Theme.Spacing.sm)
         }
-        .background(Theme.Colors.bgPrimary.opacity(0.95))
+        .background(Theme.Colors.bgPrimary.ignoresSafeArea(edges: .bottom))
     }
 
     @ViewBuilder
@@ -625,13 +648,23 @@ struct ProductDetailView: View {
                                 object: Toast(message: message, style: .error)
                             )
                             useQuickLookFallback = true
+                        },
+                        coordinatorRef: { coordinator in
+                            self.arCoordinator = coordinator
                         }
                     )
                     .ignoresSafeArea()
 
-                    // Wall snap toggle
+                    // Top bar: Close + Wall/Floor toggle
                     VStack {
                         HStack {
+                            Button(action: { isArPresented = false }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 5)
+                            }
+                            .padding()
                             Spacer()
                             Button(action: { wallSnapEnabled.toggle() }) {
                                 Label(
@@ -647,28 +680,235 @@ struct ProductDetailView: View {
                             .padding()
                         }
                         Spacer()
+
+                        // Bottom CTA: Role-based
+                        arBottomCTA()
+                            .padding(.horizontal, Theme.Spacing.md)
+                            .padding(.bottom, safeAreaBottom() + Theme.Spacing.md)
                     }
                 } else {
-                    ARQuickLookView(modelURL: modelURL, isPresented: $isArPresented)
-                        .edgesIgnoringSafeArea(.all)
-                }
-
-                // Close button
-                VStack {
-                    HStack {
-                        Button(action: { isArPresented = false }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 30))
-                                .foregroundColor(.white)
-                                .shadow(radius: 5)
+                    let isSeller = productDetail?.seller_id == authManager.currentUser?.id
+                    ARQuickLookView(
+                        modelURL: modelURL,
+                        isPresented: $isArPresented,
+                        callToAction: isSeller ? "AR 장면 공유하기" : (authManager.isAuthenticated ? "판매자에게 문의하기" : nil),
+                        productTitle: productDetail?.title,
+                        sellerName: productDetail?.seller_name,
+                        price: productDetail.map { formatPrice($0.price_cents) },
+                        onCallToAction: {
+                            if isSeller {
+                                // Seller: nothing to do in QL (no screenshot API)
+                                // Could show a toast suggesting custom AR view
+                            } else if authManager.isAuthenticated {
+                                // Buyer: close AR and open chat
+                                Task {
+                                    do {
+                                        let room = try await createOrGetChatRoom()
+                                        let request = SendMessageRequest(body: "AR에서 확인 후 문의드립니다.", image_url: nil)
+                                        let encodedBody = try JSONEncoder().encode(request)
+                                        let _: ChatMessageResponse = try await APIClient.shared.request(
+                                            endpoint: "/chat-rooms/\(room.id)/messages",
+                                            method: "POST",
+                                            body: encodedBody
+                                        )
+                                        await MainActor.run {
+                                            isArPresented = false
+                                            createdChatRoom = room
+                                            showChatRoom = true
+                                        }
+                                    } catch {
+                                        await MainActor.run {
+                                            NotificationCenter.default.post(
+                                                name: .showToast,
+                                                object: Toast(message: "문의 전송에 실패했습니다.", style: .error)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
                         }
-                        .padding()
+                    )
+                    .edgesIgnoringSafeArea(.all)
+
+                    // Close button for QuickLook
+                    VStack {
+                        HStack {
+                            Button(action: { isArPresented = false }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 30))
+                                    .foregroundColor(.white)
+                                    .shadow(radius: 5)
+                            }
+                            .padding()
+                            Spacer()
+                        }
                         Spacer()
                     }
-                    Spacer()
+                }
+            }
+            .sheet(item: Binding(
+                get: { arShareImage.map { IdentifiableImage(image: $0) } },
+                set: { if $0 == nil { arShareImage = nil } }
+            )) { item in
+                ShareSheetView(items: [item.image])
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func arBottomCTA() -> some View {
+        let isSeller = productDetail?.seller_id == authManager.currentUser?.id
+
+        if isSeller {
+            // Seller: Share AR screenshot
+            Button(action: {
+                captureAndShare()
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .bold))
+                    Text("AR 장면 공유하기")
+                }
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Theme.Colors.violetAccent)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+        } else if authManager.isAuthenticated {
+            // Buyer: Inquiry to seller
+            Button(action: {
+                captureAndInquire()
+            }) {
+                HStack(spacing: 8) {
+                    if isSendingArInquiry {
+                        ProgressView().tint(.white)
+                    } else {
+                        Image(systemName: "bubble.left.and.text.bubble.right")
+                            .font(.system(size: 16, weight: .bold))
+                    }
+                    Text("판매자에게 이 부분 문의하기")
+                }
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Theme.Colors.violetAccent)
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+            .disabled(isSendingArInquiry)
+        } else {
+            // Not logged in
+            Button(action: {
+                isArPresented = false
+                // After dismissing AR, the login prompt in the main view should handle it
+            }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 16, weight: .bold))
+                    Text("로그인하고 문의하기")
+                }
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.gray.opacity(0.6))
+                .clipShape(RoundedRectangle(cornerRadius: 14))
+            }
+        }
+    }
+
+    private func captureAndShare() {
+        arCoordinator?.captureSnapshot { image in
+            guard let image = image else { return }
+            arShareImage = image
+        }
+    }
+
+    private func captureAndInquire() {
+        guard !isSendingArInquiry else { return }
+        isSendingArInquiry = true
+
+        arCoordinator?.captureSnapshot { capturedImage in
+            Task {
+                do {
+                    var imageURL: String? = nil
+
+                    // Upload screenshot if captured
+                    if let image = capturedImage, let jpegData = image.jpegData(compressionQuality: 0.8) {
+                        imageURL = try await uploadChatImage(data: jpegData)
+                    }
+
+                    // Create or reuse chat room
+                    let room = try await createOrGetChatRoom()
+
+                    // Send image message via REST
+                    let messageBody = "AR에서 확인 후 문의드립니다."
+                    let request = SendMessageRequest(body: messageBody, image_url: imageURL)
+                    let encodedBody = try JSONEncoder().encode(request)
+                    let _: ChatMessageResponse = try await APIClient.shared.request(
+                        endpoint: "/chat-rooms/\(room.id)/messages",
+                        method: "POST",
+                        body: encodedBody
+                    )
+
+                    await MainActor.run {
+                        isSendingArInquiry = false
+                        isArPresented = false
+                        createdChatRoom = room
+                        showChatRoom = true
+                    }
+                } catch {
+                    await MainActor.run {
+                        isSendingArInquiry = false
+                        NotificationCenter.default.post(
+                            name: .showToast,
+                            object: Toast(message: "문의 전송에 실패했습니다.", style: .error)
+                        )
+                    }
                 }
             }
         }
+    }
+
+    private func uploadChatImage(data: Data) async throws -> String {
+        let boundary = UUID().uuidString
+        var request = URLRequest(url: URL(string: "\(AppEnvironment.current.apiBaseURL)/chat-images/upload")!)
+        request.httpMethod = "POST"
+        request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        if let token = AuthManager.shared.currentToken {
+            request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        }
+
+        var body = Data()
+        body.append("--\(boundary)\r\n".data(using: .utf8)!)
+        body.append("Content-Disposition: form-data; name=\"file\"; filename=\"ar_screenshot.jpg\"\r\n".data(using: .utf8)!)
+        body.append("Content-Type: image/jpeg\r\n\r\n".data(using: .utf8)!)
+        body.append(data)
+        body.append("\r\n--\(boundary)--\r\n".data(using: .utf8)!)
+        request.httpBody = body
+
+        let (responseData, _) = try await URLSession.shared.data(for: request)
+        let json = try JSONDecoder().decode([String: String].self, from: responseData)
+        guard let imageURL = json["image_url"] else {
+            throw APIError.invalidResponse
+        }
+        return imageURL
+    }
+
+    private func createOrGetChatRoom() async throws -> ChatRoomResponse {
+        if let existingRoom = createdChatRoom {
+            return existingRoom
+        }
+        let request = CreateChatRoomRequest(subject: productDetail?.title ?? "")
+        let encodedBody = try JSONEncoder().encode(request)
+        let room: ChatRoomResponse = try await APIClient.shared.request(
+            endpoint: "/products/\(productId.uuidString)/chat-rooms",
+            method: "POST",
+            body: encodedBody
+        )
+        return room
     }
 
     // MARK: - Computed

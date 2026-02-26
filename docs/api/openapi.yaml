@@ -508,6 +508,40 @@ paths:
         "401":
           $ref: "#/components/responses/Unauthorized"
 
+  /v1/chat-images/upload:
+    post:
+      operationId: uploadChatImage
+      summary: Upload a chat image (AR screenshot, etc.)
+      tags: [chat]
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file (JPEG, PNG, or WebP). Max 20MB.
+              required:
+                - file
+      responses:
+        "200":
+          description: Upload successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ChatImageUploadResponse"
+        "400":
+          description: Invalid file type or empty file
+        "413":
+          description: File too large (max 20MB)
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /v1/ai/suggest-listing:
     post:
       operationId: aiSuggestListing
@@ -739,8 +773,8 @@ paths:
         - 4001: Missing or invalid token
         - 4003: Not a participant in this room
 
-        Inbound message format: `{"body": "message text"}`
-        Outbound message format: `{"type": "message", "id": "uuid", "room_id": "uuid", "sender_id": "uuid", "body": "text", "created_at": "iso8601"}`
+        Inbound message format: `{"body": "message text", "image_url": "https://...(optional)"}`
+        Outbound message format: `{"type": "message", "id": "uuid", "room_id": "uuid", "sender_id": "uuid", "body": "text", "message_type": "TEXT|IMAGE", "image_url": "...|null", "created_at": "iso8601"}`
 
         Messages are persisted to the database and broadcast to all room participants.
       tags: [chat]
@@ -1465,6 +1499,13 @@ components:
           format: uuid
         body:
           type: string
+        message_type:
+          type: string
+          enum: [TEXT, IMAGE]
+          default: TEXT
+        image_url:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -1473,6 +1514,7 @@ components:
         - room_id
         - sender_id
         - body
+        - message_type
         - created_at
 
     SendMessageRequest:
@@ -1480,8 +1522,20 @@ components:
       properties:
         body:
           type: string
+        image_url:
+          type: string
+          nullable: true
+          description: HTTP(S) URL of an uploaded chat image
       required:
         - body
+
+    ChatImageUploadResponse:
+      type: object
+      properties:
+        image_url:
+          type: string
+      required:
+        - image_url
 
     # --- Auth ---
     AuthProvidersResponse:

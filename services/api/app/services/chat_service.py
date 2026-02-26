@@ -5,7 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.models.chat import ChatRoom
-from app.models.enums import ImageType
+from app.models.enums import ImageType, MessageType
 from app.repositories.chat_repo import ChatRepo
 from app.repositories.product_repo import ProductRepo
 from app.schemas.chat import ChatMessageResponse, ChatRoomResponse
@@ -115,6 +115,8 @@ class ChatService:
                 room_id=m.room_id,
                 sender_id=m.sender_id,
                 body=m.body,
+                message_type=m.message_type or MessageType.TEXT,
+                image_url=m.image_url,
                 created_at=m.created_at,
             )
             for m in messages
@@ -125,6 +127,7 @@ class ChatService:
         room_id: uuid.UUID,
         sender_id: uuid.UUID,
         body: str,
+        image_url: str | None = None,
     ) -> ChatMessageResponse:
         room = self.chat_repo.get_room(room_id)
         if not room:
@@ -132,7 +135,14 @@ class ChatService:
         if room.buyer_id != sender_id and room.seller_id != sender_id:
             raise HTTPException(status_code=403, detail="Not a participant")
 
-        msg = self.chat_repo.add_message(room_id=room_id, sender_id=sender_id, body=body)
+        message_type = MessageType.IMAGE if image_url else MessageType.TEXT
+        msg = self.chat_repo.add_message(
+            room_id=room_id,
+            sender_id=sender_id,
+            body=body,
+            message_type=message_type,
+            image_url=image_url,
+        )
         self.db.commit()
 
         return ChatMessageResponse(
@@ -140,5 +150,7 @@ class ChatService:
             room_id=msg.room_id,
             sender_id=msg.sender_id,
             body=msg.body,
+            message_type=msg.message_type or MessageType.TEXT,
+            image_url=msg.image_url,
             created_at=msg.created_at,
         )

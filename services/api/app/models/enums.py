@@ -32,6 +32,11 @@ class ImageType(enum.StrEnum):
     DISPLAY = "DISPLAY"
 
 
+class MessageType(enum.StrEnum):
+    TEXT = "TEXT"
+    IMAGE = "IMAGE"
+
+
 class ProductStatus(enum.StrEnum):
     FOR_SALE = "FOR_SALE"
     RESERVED = "RESERVED"

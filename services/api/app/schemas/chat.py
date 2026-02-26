@@ -1,7 +1,8 @@
 import uuid
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class CreateChatRoomRequest(BaseModel):
@@ -26,6 +27,16 @@ class ChatRoomResponse(BaseModel):
 
 class SendMessageRequest(BaseModel):
     body: str
+    image_url: str | None = None
+
+    @field_validator("image_url")
+    @classmethod
+    def validate_image_url(cls, v: str | None) -> str | None:
+        if v is None:
+            return v
+        if not v.startswith(("http://", "https://")):
+            raise ValueError("image_url must be an HTTP or HTTPS URL")
+        return v
 
 
 class ChatMessageResponse(BaseModel):
@@ -33,7 +44,13 @@ class ChatMessageResponse(BaseModel):
     room_id: uuid.UUID
     sender_id: uuid.UUID
     body: str
+    message_type: Literal["TEXT", "IMAGE"] = "TEXT"
+    image_url: str | None = None
     created_at: datetime
+
+
+class ChatImageUploadResponse(BaseModel):
+    image_url: str
 
 
 class ChatRoomListResponse(BaseModel):

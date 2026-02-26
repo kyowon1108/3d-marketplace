@@ -12,6 +12,7 @@
 		1C998C40F54C4D0A89D50003 /* ProductEditView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50013 /* ProductEditView.swift */; };
 		1C998C40F54C4D0A89D50004 /* CachedAsyncImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50014 /* CachedAsyncImage.swift */; };
 		1C998C40F54C4D0A89D50005 /* ModelDownloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50015 /* ModelDownloader.swift */; };
+		1C998C40F54C4D0A89D50006 /* ShareSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C998C40F54C4D0A89D50016 /* ShareSheetView.swift */; };
 		02B017F527F3765CF0DFA45B /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F17F615814C8D98DBF52AB /* ContentView.swift */; };
 		04651163E6E0D46DDCF11E49 /* NativeCaptureViewMock.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF5660E2400C8234E22F928B /* NativeCaptureViewMock.swift */; };
 		05B78FDE3DAD93D6A8CFB644 /* MarketplaceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = EAF31F3AF4B70FA032BC7B92 /* MarketplaceApp.swift */; };
@@ -63,6 +64,7 @@
 		1C998C40F54C4D0A89D50013 /* ProductEditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductEditView.swift; sourceTree = "<group>"; };
 		1C998C40F54C4D0A89D50014 /* CachedAsyncImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CachedAsyncImage.swift; sourceTree = "<group>"; };
 		1C998C40F54C4D0A89D50015 /* ModelDownloader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModelDownloader.swift; sourceTree = "<group>"; };
+		1C998C40F54C4D0A89D50016 /* ShareSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheetView.swift; sourceTree = "<group>"; };
 		1674E08F0D0892DEEB92E6FB /* ARPlacementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ARPlacementView.swift; sourceTree = "<group>"; };
 		1DC8DC5A32FD08C386BA06D6 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		23C985F3A6FB1E7F1EE58A20 /* ProcessingGateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProcessingGateView.swift; sourceTree = "<group>"; };
@@ -299,6 +301,7 @@
 			isa = PBXGroup;
 			children = (
 				1C998C40F54C4D0A89D50014 /* CachedAsyncImage.swift */,
+				1C998C40F54C4D0A89D50016 /* ShareSheetView.swift */,
 				1DC8DC5A32FD08C386BA06D6 /* Theme.swift */,
 				3B32270F22EF62811FE868D0 /* Components */,
 				46FAE87FB673F4822CC4D996 /* Modifiers */,
@@ -461,6 +464,7 @@
 					2A49486C121A9EC630BDD053 /* SellNewViewModel.swift in Sources */,
 					1C998C40F54C4D0A89D50004 /* CachedAsyncImage.swift in Sources */,
 					1C998C40F54C4D0A89D50005 /* ModelDownloader.swift in Sources */,
+					1C998C40F54C4D0A89D50006 /* ShareSheetView.swift in Sources */,
 					E02D927DA9F04E573F5BAC40 /* ShimmerModifier.swift in Sources */,
 				3540986A19A0EC4D94323EC6 /* SweepCaptureEngine.swift in Sources */,
 				7F31B40CF23A90FE6F935428 /* Theme.swift in Sources */,

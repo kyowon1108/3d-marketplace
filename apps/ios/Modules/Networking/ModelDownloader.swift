@@ -3,7 +3,7 @@ import SwiftUI
 
 /// Downloads USDZ model files with real-time progress tracking.
 /// Uses URLSessionDownloadDelegate for byte-level progress updates.
-final class ModelDownloader: NSObject, ObservableObject {
+final class ModelDownloader: NSObject, ObservableObject, @unchecked Sendable {
     @Published var progress: Double = 0.0       // 0.0 ~ 1.0
     @Published var isDownloading: Bool = false
     @Published var downloadedURL: URL? = nil

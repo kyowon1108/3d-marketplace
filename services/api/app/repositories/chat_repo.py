@@ -62,8 +62,16 @@ class ChatRepo:
         room_id: uuid.UUID,
         sender_id: uuid.UUID,
         body: str,
+        message_type: str = "TEXT",
+        image_url: str | None = None,
     ) -> ChatMessage:
-        msg = ChatMessage(room_id=room_id, sender_id=sender_id, body=body)
+        msg = ChatMessage(
+            room_id=room_id,
+            sender_id=sender_id,
+            body=body,
+            message_type=message_type,
+            image_url=image_url,
+        )
         self.db.add(msg)
         self.db.flush()
 
@@ -71,7 +79,7 @@ class ChatRepo:
         room = self.db.get(ChatRoom, room_id)
         if room:
             room.last_message_at = datetime.now(UTC)
-            room.last_message_body = body
+            room.last_message_body = "[사진]" if message_type == "IMAGE" else body
             self.db.flush()
 
         return msg

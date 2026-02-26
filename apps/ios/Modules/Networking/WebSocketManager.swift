@@ -46,8 +46,11 @@ final class WebSocketManager: @unchecked Sendable {
         reconnectAttempts = 0
     }
 
-    func send(body: String) {
-        let payload: [String: String] = ["body": body]
+    func send(body: String, imageURL: String? = nil) {
+        var payload: [String: String] = ["body": body]
+        if let imageURL = imageURL {
+            payload["image_url"] = imageURL
+        }
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let jsonString = String(data: data, encoding: .utf8) else { return }
 
@@ -132,5 +135,7 @@ struct ChatWsMessage: Decodable {
     let room_id: String
     let sender_id: String?
     let body: String
+    let message_type: String?
+    let image_url: String?
     let created_at: String?
 }

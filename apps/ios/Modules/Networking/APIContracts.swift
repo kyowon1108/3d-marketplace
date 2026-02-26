@@ -289,11 +289,14 @@ struct ChatMessageResponse: Decodable, Identifiable {
     let room_id: String
     let sender_id: String
     let body: String
+    let message_type: String?
+    let image_url: String?
     let created_at: String
 }
 
 struct SendMessageRequest: Encodable {
     let body: String
+    let image_url: String?
 }
 
 struct CreateChatRoomRequest: Encodable {

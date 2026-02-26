@@ -11,6 +11,8 @@ struct ARPlacementView: UIViewRepresentable {
     var dims: ModelDimensions?
     var onDismiss: (() -> Void)?
     var onError: ((String) -> Void)?
+    /// Expose coordinator reference so parent can call captureSnapshot
+    var coordinatorRef: ((Coordinator) -> Void)? = nil
 
     func makeUIView(context: Context) -> ARView {
         let arView = ARView(frame: .zero)
@@ -45,6 +47,9 @@ struct ARPlacementView: UIViewRepresentable {
 
         // Add footprint indicator (dynamic size from dims)
         context.coordinator.addFootprintIndicator()
+
+        // Expose coordinator to parent
+        coordinatorRef?(context.coordinator)
 
         return arView
     }
@@ -82,6 +87,16 @@ struct ARPlacementView: UIViewRepresentable {
             loadCancellable?.cancel()
             loadCancellable = nil
             preloadedModel = nil
+        }
+
+        func captureSnapshot(completion: @escaping (UIImage?) -> Void) {
+            guard let arView = arView else {
+                completion(nil)
+                return
+            }
+            arView.snapshot(saveToHDR: false) { image in
+                completion(image)
+            }
         }
 
         func prepareModel() {

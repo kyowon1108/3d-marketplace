@@ -192,6 +192,8 @@ struct ChatRoomView: View {
                 room_id: wsMessage.room_id,
                 sender_id: wsMessage.sender_id ?? "",
                 body: wsMessage.body,
+                message_type: wsMessage.message_type,
+                image_url: wsMessage.image_url,
                 created_at: wsMessage.created_at ?? ""
             )
             messages.append(chatMsg)
@@ -258,7 +260,7 @@ struct ChatRoomView: View {
             isSending = true
             Task {
                 do {
-                    let request = SendMessageRequest(body: body)
+                    let request = SendMessageRequest(body: body, image_url: nil)
                     let encodedBody = try JSONEncoder().encode(request)
                     let sent: ChatMessageResponse = try await APIClient.shared.request(
                         endpoint: "/chat-rooms/\(room.id)/messages",
@@ -313,13 +315,50 @@ private struct MessageBubble: View {
             }
 
             VStack(alignment: isMe ? .trailing : .leading, spacing: 2) {
-                Text(message.body)
-                    .font(.body)
-                    .padding(.horizontal, Theme.Spacing.md)
-                    .padding(.vertical, 10)
-                    .background(isMe ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
-                    .foregroundColor(Theme.Colors.textPrimary)
-                    .clipShape(ChatBubbleShape(isMe: isMe))
+                if message.message_type == "IMAGE", let imageURLString = message.image_url,
+                   let imageURL = URL(string: imageURLString) {
+                    CachedAsyncImage(url: imageURL) { image in
+                        image
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxWidth: 220, maxHeight: 220)
+                    } placeholder: {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Theme.Colors.bgSecondary)
+                            .frame(width: 220, height: 165)
+                            .overlay(ProgressView().tint(Theme.Colors.violetAccent))
+                    } failure: {
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Theme.Colors.bgSecondary)
+                            .frame(width: 220, height: 165)
+                            .overlay(
+                                VStack(spacing: 4) {
+                                    Image(systemName: "photo")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(Theme.Colors.textMuted)
+                                    Text("이미지 로드 실패")
+                                        .font(.caption2)
+                                        .foregroundColor(Theme.Colors.textMuted)
+                                }
+                            )
+                    }
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
+
+                    if !message.body.isEmpty && message.body != "[사진]" {
+                        Text(message.body)
+                            .font(.caption)
+                            .foregroundColor(Theme.Colors.textSecondary)
+                            .padding(.horizontal, 4)
+                    }
+                } else {
+                    Text(message.body)
+                        .font(.body)
+                        .padding(.horizontal, Theme.Spacing.md)
+                        .padding(.vertical, 10)
+                        .background(isMe ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                        .foregroundColor(Theme.Colors.textPrimary)
+                        .clipShape(ChatBubbleShape(isMe: isMe))
+                }
 
                 Text(formatTime(from: message.created_at))
                     .font(.system(size: 11))
