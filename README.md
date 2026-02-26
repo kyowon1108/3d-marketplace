@@ -52,14 +52,14 @@ Product Browse → Product Detail → AR Placement (footprint-first, 단일 모�
 
 ## Database
 
-PostgreSQL 16. Alembic으로 마이그레이션 관리 (현재 revision 012).
+PostgreSQL 16. Alembic으로 마이그레이션 관리 (현재 revision 014).
 
 ### 테이블 목록
 
 | Table | 설명 |
 |-------|------|
 | `users` | 사용자. email, name, provider, location_name |
-| `products` | 게시 상품. title, price, status (FOR_SALE/RESERVED/SOLD_OUT), seller/asset 연결, deleted_at (soft delete) |
+| `products` | 게시 상품. title, price, status, category, condition, dims_comparison, seller/asset 연결, deleted_at (soft delete) |
 | `purchases` | 구매 내역. product_id, buyer_id, price_cents. unique(product_id) |
 | `model_assets` | iOS가 생성한 3D 모델 메타. status: INITIATED → UPLOADING → READY → PUBLISHED (or FAILED) |
 | `model_asset_files` | 모델 파일 (MODEL_USDZ, MODEL_GLB, PREVIEW_PNG). checksum, size 검증 |
@@ -86,6 +86,9 @@ INITIATED → UPLOADING → READY → PUBLISHED
 - `purchases.product_id`: unique (1회 구매)
 - publish는 asset.status=READY 이후에만 허용
 - upload complete 시 checksum(sha256) + size 검증 필수
+- `products.category`: CHECK IN (ELECTRONICS, FURNITURE, CLOTHING, BOOKS_MEDIA, SPORTS, LIVING, BEAUTY, HOBBY, OTHER) OR NULL
+- `products.condition`: CHECK IN (NEW, LIKE_NEW, USED, WORN) OR NULL
+- `ix_products_category_published_at` 복합 인덱스
 
 ---
 
@@ -121,14 +124,14 @@ FastAPI 기반. OpenAPI 스펙은 `docs/api/openapi.yaml`에 정의.
 
 | Method | Path | 설명 |
 |--------|------|------|
-| POST | `/v1/ai/suggest-listing` | AI 기반 상품 정보 추천 (제목/설명/카테고리/가격) |
+| POST | `/v1/ai/suggest-listing` | AI 기반 상품 정보 추천 (제목/설명/카테고리/상태/가격범위/치수비교/가격사유) |
 
 #### Products (10개)
 
 | Method | Path | 설명 |
 |--------|------|------|
 | POST | `/v1/products/publish` | READY asset을 상품으로 게시 (Idempotency-Key 필수) |
-| GET | `/v1/products` | 상품 목록 (검색, 페이징, seller/liked 필터) |
+| GET | `/v1/products` | 상품 목록 (검색, 페이징, seller/liked/category 필터) |
 | GET | `/v1/products/{id}` | 상품 상세 (조회수 자동 증가, 셀러 가입일/거래횟수 포함) |
 | PATCH | `/v1/products/{id}` | 상품 수정 (제목/가격/설명, 소유자만, SOLD_OUT 수정 불가) |
 | DELETE | `/v1/products/{id}` | 상품 삭제 (soft delete, 소유자만) |
@@ -174,10 +177,10 @@ SwiftUI 기반. 11개 화면으로 웹 라우트와 1:1 대응. 로그인 필수
 | Web Route | iOS Screen | 주요 API |
 |-----------|------------|----------|
 | `/` | Home | GET /v1/products |
-| `/products` | ProductList | GET /v1/products (카테고리 필터: 최신순/인기순/무료) |
+| `/products` | ProductList | GET /v1/products(?category=) (정렬: 최신순/인기순/무료, 카테고리 서버 필터) |
 | `/products/[id]` | ProductDetail | GET /v1/products/{id}, ar-asset, like, purchase, chat-rooms |
-| `/search` | Search | GET /v1/products?q= |
-| `/app/sell/new` | SellNew | uploads/init, uploads/complete, products/publish, ai/suggest |
+| `/search` | Search | GET /v1/products?q=&category= |
+| `/app/sell/new` | SellNew | ai/suggest (8필드), uploads/init, uploads/complete, products/publish |
 | `/app/reconstructions/[jobId]` | UploadStatus | GET /v1/model-assets/{assetId} |
 | `/app/inbox` | Inbox | GET /v1/chat-rooms |
 | `/app/inbox/[roomId]` | ChatRoom | messages + WebSocket |
@@ -217,7 +220,7 @@ apps/ios/
 2. FrameSelector로 품질/yaw 기반 프레임 선택
 3. LocalModelBuilder로 로컬 3D 모델 생성 (PhotogrammetrySession)
 4. USDZ export + 썸네일 자동 생성 + 치수 자동 추출 (bounding box)
-5. AI 추천: 제목/설명/카테고리/가격 자동 제안 (선택적)
+5. AI 추천: 제목/설명/카테고리/상태/가격범위/치수비교/가격사유 자동 제안 (선택적)
 6. uploads/init → presigned upload → uploads/complete (SHA256 checksum 검증)
 7. products/publish (asset.status=READY 이후에만 가능)
 8. 등록 후 수정/삭제/상태변경 가능 (상세 화면 ellipsis 메뉴)

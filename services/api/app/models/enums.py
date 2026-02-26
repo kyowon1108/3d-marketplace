@@ -37,6 +37,25 @@ class MessageType(enum.StrEnum):
     IMAGE = "IMAGE"
 
 
+class ProductCategory(enum.StrEnum):
+    ELECTRONICS = "ELECTRONICS"
+    FURNITURE = "FURNITURE"
+    CLOTHING = "CLOTHING"
+    BOOKS_MEDIA = "BOOKS_MEDIA"
+    SPORTS = "SPORTS"
+    LIVING = "LIVING"
+    BEAUTY = "BEAUTY"
+    HOBBY = "HOBBY"
+    OTHER = "OTHER"
+
+
+class ProductCondition(enum.StrEnum):
+    NEW = "NEW"
+    LIKE_NEW = "LIKE_NEW"
+    USED = "USED"
+    WORN = "WORN"
+
+
 class ProductStatus(enum.StrEnum):
     FOR_SALE = "FOR_SALE"
     RESERVED = "RESERVED"

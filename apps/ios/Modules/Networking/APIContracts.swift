@@ -24,6 +24,9 @@ struct ProductResponse: Decodable, Identifiable {
     let seller_joined_at: String?
     let seller_trade_count: Int?
     let thumbnail_url: String?
+    let category: String?
+    let condition: String?
+    let dims_comparison: String?
     let status: String
     let chat_count: Int?
     let likes_count: Int?
@@ -38,6 +41,9 @@ struct ProductPublishRequest: Encodable {
     let title: String
     let description: String?
     let price_cents: Int
+    let category: String?
+    let condition: String?
+    let dims_comparison: String?
 }
 
 struct ProductUpdateRequest: Encodable {
@@ -316,6 +322,12 @@ struct AISuggestListingRequest: Encodable {
 struct AISuggestListingResponse: Decodable {
     let suggested_title: String
     let suggested_description: String
+    let suggested_category: String?
+    let suggested_condition: String?
+    let suggested_price_min: Int?
+    let suggested_price_max: Int?
+    let dims_comparison: String?
+    let suggested_price_reason: String?
 }
 
 // MARK: Asset
@@ -349,6 +361,52 @@ struct ModelAssetResponse: Decodable {
         let sort_order: Int
     }
 }
+
+// MARK: - Product Enums
+
+public enum ProductCategory: String, CaseIterable {
+    case electronics = "ELECTRONICS"
+    case furniture = "FURNITURE"
+    case clothing = "CLOTHING"
+    case booksMedia = "BOOKS_MEDIA"
+    case sports = "SPORTS"
+    case living = "LIVING"
+    case beauty = "BEAUTY"
+    case hobby = "HOBBY"
+    case other = "OTHER"
+
+    var label: String {
+        switch self {
+        case .electronics: return "전자기기"
+        case .furniture: return "가구/인테리어"
+        case .clothing: return "의류/잡화"
+        case .booksMedia: return "도서/미디어"
+        case .sports: return "스포츠/레저"
+        case .living: return "생활용품"
+        case .beauty: return "뷰티/미용"
+        case .hobby: return "취미/수집"
+        case .other: return "기타"
+        }
+    }
+}
+
+public enum ProductCondition: String, CaseIterable {
+    case new_ = "NEW"
+    case likeNew = "LIKE_NEW"
+    case used = "USED"
+    case worn = "WORN"
+
+    var label: String {
+        switch self {
+        case .new_: return "새상품"
+        case .likeNew: return "거의새것"
+        case .used: return "사용감있음"
+        case .worn: return "오래된상품"
+        }
+    }
+}
+
+// MARK: - AR Asset
 
 struct ArAssetResponse: Decodable {
     let availability: String

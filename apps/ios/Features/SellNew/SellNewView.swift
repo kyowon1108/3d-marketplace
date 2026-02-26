@@ -170,7 +170,7 @@ struct SellNewView: View {
                                         Image(systemName: "wand.and.stars")
                                             .font(.system(size: 16, weight: .semibold))
                                     }
-                                    Text(viewModel.isLoadingAISuggestion ? "AI가 분석 중..." : "AI가 제목/설명 추천")
+                                    Text(viewModel.isLoadingAISuggestion ? "AI가 분석 중..." : "AI가 상품 정보 자동 작성")
                                         .font(.subheadline.weight(.bold))
                                 }
                                 .frame(maxWidth: .infinity)
@@ -187,7 +187,7 @@ struct SellNewView: View {
                             }
                             .disabled(viewModel.isLoadingAISuggestion)
                             .accessibilityLabel("AI 상품 정보 추천")
-                            .accessibilityHint("AI가 스캔한 모델을 분석하여 상품명과 설명을 자동으로 추천합니다.")
+                            .accessibilityHint("AI가 스캔한 모델을 분석하여 상품 정보를 자동으로 추천합니다.")
                         }
 
                         // Text Form Section
@@ -203,7 +203,53 @@ struct SellNewView: View {
                                     .cornerRadius(12)
                                     .foregroundColor(Theme.Colors.textPrimary)
                             }
-                            
+
+                            // Category Picker
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("카테고리")
+                                    .font(.headline)
+                                    .foregroundColor(Theme.Colors.textPrimary)
+                                ScrollView(.horizontal, showsIndicators: false) {
+                                    HStack(spacing: 8) {
+                                        ForEach(ProductCategory.allCases, id: \.self) { cat in
+                                            Button(action: {
+                                                viewModel.publishCategory = viewModel.publishCategory == cat ? nil : cat
+                                            }) {
+                                                Text(cat.label)
+                                                    .font(.subheadline.weight(.medium))
+                                                    .foregroundColor(viewModel.publishCategory == cat ? .white : Theme.Colors.textSecondary)
+                                                    .padding(.horizontal, 14)
+                                                    .padding(.vertical, 8)
+                                                    .background(viewModel.publishCategory == cat ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                                                    .clipShape(Capsule())
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Condition Picker
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("상품 상태")
+                                    .font(.headline)
+                                    .foregroundColor(Theme.Colors.textPrimary)
+                                HStack(spacing: 0) {
+                                    ForEach(ProductCondition.allCases, id: \.self) { cond in
+                                        Button(action: {
+                                            viewModel.publishCondition = viewModel.publishCondition == cond ? nil : cond
+                                        }) {
+                                            Text(cond.label)
+                                                .font(.subheadline.weight(.medium))
+                                                .foregroundColor(viewModel.publishCondition == cond ? .white : Theme.Colors.textSecondary)
+                                                .frame(maxWidth: .infinity)
+                                                .padding(.vertical, 10)
+                                                .background(viewModel.publishCondition == cond ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                                        }
+                                    }
+                                }
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                            }
+
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("가격 (원) *")
                                     .font(.headline)
@@ -214,8 +260,31 @@ struct SellNewView: View {
                                     .background(Theme.Colors.bgSecondary)
                                     .cornerRadius(12)
                                     .foregroundColor(Theme.Colors.textPrimary)
+
+                                // AI price hint
+                                if let minP = viewModel.suggestedPriceMin, let maxP = viewModel.suggestedPriceMax {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "wand.and.stars")
+                                            .font(.system(size: 12))
+                                            .foregroundColor(Theme.Colors.violetAccent)
+                                        Text("AI 추천: ₩\(formatNumberWithComma(minP)) ~ ₩\(formatNumberWithComma(maxP))")
+                                            .font(.caption)
+                                            .foregroundColor(Theme.Colors.textSecondary)
+                                    }
+                                    .padding(.top, 2)
+                                }
+                                if let reason = viewModel.suggestedPriceReason {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "lightbulb")
+                                            .font(.system(size: 11))
+                                            .foregroundColor(Theme.Colors.textMuted)
+                                        Text("AI 근거: \(reason)")
+                                            .font(.caption2)
+                                            .foregroundColor(Theme.Colors.textMuted)
+                                    }
+                                }
                             }
-                            
+
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("설명 (선택)")
                                     .font(.headline)

@@ -32,9 +32,17 @@ public class SellNewViewModel {
     public var uploadedAssetId: String? = nil
     public var extractedDimensions: ModelDimensions? = nil
 
+    // Category & Condition
+    public var publishCategory: ProductCategory? = nil
+    public var publishCondition: ProductCondition? = nil
+    public var dimsComparison: String? = nil
+
     // AI suggest
     public var isLoadingAISuggestion: Bool = false
     public var aiSuggestionError: String? = nil
+    public var suggestedPriceMin: Int? = nil
+    public var suggestedPriceMax: Int? = nil
+    public var suggestedPriceReason: String? = nil
 
     // Error state
     public var uploadError: String? = nil
@@ -331,6 +339,16 @@ public class SellNewViewModel {
 
                 self.publishTitle = response.suggested_title
                 self.publishDescription = response.suggested_description
+                if let cat = response.suggested_category {
+                    self.publishCategory = ProductCategory(rawValue: cat)
+                }
+                if let cond = response.suggested_condition {
+                    self.publishCondition = ProductCondition(rawValue: cond)
+                }
+                self.suggestedPriceMin = response.suggested_price_min
+                self.suggestedPriceMax = response.suggested_price_max
+                self.dimsComparison = response.dims_comparison
+                self.suggestedPriceReason = response.suggested_price_reason
                 self.isLoadingAISuggestion = false
             } catch {
                 self.isLoadingAISuggestion = false
@@ -365,7 +383,10 @@ public class SellNewViewModel {
             asset_id: assetId,
             title: publishTitle,
             description: publishDescription.isEmpty ? nil : publishDescription,
-            price_cents: priceCents
+            price_cents: priceCents,
+            category: publishCategory?.rawValue,
+            condition: publishCondition?.rawValue,
+            dims_comparison: dimsComparison
         )
 
         isPublishing = true
@@ -400,6 +421,12 @@ public class SellNewViewModel {
         self.publishTitle = ""
         self.publishPrice = ""
         self.publishDescription = ""
+        self.publishCategory = nil
+        self.publishCondition = nil
+        self.dimsComparison = nil
+        self.suggestedPriceMin = nil
+        self.suggestedPriceMax = nil
+        self.suggestedPriceReason = nil
         self.capturedFolderURL = nil
         self.generatedModelURL = nil
         self.extractedDimensions = nil

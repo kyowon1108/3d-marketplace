@@ -42,6 +42,23 @@ implement/         Gate-based refactor docs (read-only reference)
 ## dims.source Values
 `ios_lidar | ios_manual | unknown`
 
+## Product Enums
+```
+ProductCategory: ELECTRONICS | FURNITURE | CLOTHING | BOOKS_MEDIA | SPORTS | LIVING | BEAUTY | HOBBY | OTHER
+ProductCondition: NEW | LIKE_NEW | USED | WORN
+```
+- DB CHECK 제약으로 잘못된 값 차단
+- API 레벨 Pydantic validator + 쿼리 파라미터 검증 이중 방어
+- `products.category + published_at` 복합 인덱스
+
+## AI Suggest Listing
+`POST /v1/ai/suggest-listing` — OpenAI gpt-4o-mini Vision
+- 입력: thumbnail_url + dims (optional)
+- 출력: title, description, category, condition, price_min/max, dims_comparison, price_reason
+- In-memory TTL 캐시 (5분, 키: thumbnail_url + dims 튜플)
+- category/condition 서버 정규화 (upper-case + enum set 검증, 무효 시 null)
+- price_reason은 DB 미저장 (판매자 폼 힌트 전용)
+
 ## AI Work Rules (from implement/ops/)
 **Work loop**: Intake → Plan → Execute → Validate → Document → Commit → Report
 

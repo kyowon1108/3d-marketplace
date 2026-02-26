@@ -28,6 +28,9 @@ class PublishService:
         title: str,
         price_cents: int,
         description: str | None = None,
+        category: str | None = None,
+        condition: str | None = None,
+        dims_comparison: str | None = None,
     ) -> ProductResponse:
         asset = self.asset_repo.get_by_id(asset_id)
         if not asset:
@@ -49,6 +52,9 @@ class PublishService:
             description=description,
             price_cents=price_cents,
             seller_id=owner_id,
+            category=category,
+            condition=condition,
+            dims_comparison=dims_comparison,
         )
 
         # Transition asset to PUBLISHED
@@ -80,6 +86,9 @@ class PublishService:
             seller_name=seller_name,
             seller_avatar_url=seller_avatar_url,
             thumbnail_url=thumbnail_url,
+            category=product.category,
+            condition=product.condition,
+            dims_comparison=product.dims_comparison,
             status=product.status,
             likes_count=0,
             views_count=0,

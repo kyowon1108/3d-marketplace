@@ -6,6 +6,7 @@ struct SearchView: View {
     @State private var results: [Product] = []
     @State private var recentSearches: [String] = UserDefaults.standard.stringArray(forKey: "recentSearches") ?? []
     @State private var searchTask: Task<Void, Never>?
+    @State private var selectedCategory: ProductCategory? = nil
 
     var body: some View {
         ZStack {
@@ -43,6 +44,37 @@ struct SearchView: View {
                 .cornerRadius(12)
                 .padding(.horizontal, Theme.Spacing.md)
                 .padding(.top, Theme.Spacing.sm)
+
+                // Category filter
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        Button(action: { selectedCategory = nil; triggerSearchIfNeeded() }) {
+                            Text("전체")
+                                .font(.caption.weight(.medium))
+                                .foregroundColor(selectedCategory == nil ? .white : Theme.Colors.textSecondary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(selectedCategory == nil ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                                .clipShape(Capsule())
+                        }
+                        ForEach(ProductCategory.allCases, id: \.self) { cat in
+                            Button(action: {
+                                selectedCategory = selectedCategory == cat ? nil : cat
+                                triggerSearchIfNeeded()
+                            }) {
+                                Text(cat.label)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundColor(selectedCategory == cat ? .white : Theme.Colors.textSecondary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(selectedCategory == cat ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                                    .clipShape(Capsule())
+                            }
+                        }
+                    }
+                    .padding(.horizontal, Theme.Spacing.md)
+                }
+                .padding(.top, Theme.Spacing.xs)
 
                 if searchText.isEmpty && results.isEmpty {
                     // Recent searches
@@ -132,7 +164,9 @@ struct SearchView: View {
                     likes: product.likes,
                     thumbnailUrl: product.thumbnailUrl,
                     createdAt: product.createdAt,
-                    chatCount: product.chatCount
+                    chatCount: product.chatCount,
+                    category: product.category,
+                    condition: product.condition
                 )
             }
         }
@@ -176,7 +210,19 @@ struct SearchView: View {
         UserDefaults.standard.set(recents, forKey: "recentSearches")
     }
 
+    private func triggerSearchIfNeeded() {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return }
+        searchTask?.cancel()
+        Task {
+            await runSearch(query: query, saveToRecents: false)
+        }
+    }
+
     private func runSearch(query: String, saveToRecents: Bool) async {
+        // Snapshot current category to detect stale responses
+        let categorySnapshot = selectedCategory
+
         if saveToRecents {
             await MainActor.run {
                 updateRecentSearches(with: query)
@@ -189,8 +235,12 @@ struct SearchView: View {
 
         do {
             let encoded = query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? query
+            var endpoint = "/products?q=\(encoded)"
+            if let cat = categorySnapshot {
+                endpoint += "&category=\(cat.rawValue)"
+            }
             let response: ProductListResponse = try await APIClient.shared.request(
-                endpoint: "/products?q=\(encoded)",
+                endpoint: endpoint,
                 needsAuth: false
             )
             let fetched = response.products.map { p in
@@ -203,19 +253,21 @@ struct SearchView: View {
                     likes: p.likes_count ?? 0,
                     thumbnailUrl: p.thumbnail_url,
                     createdAt: p.created_at,
-                    chatCount: p.chat_count ?? 0
+                    chatCount: p.chat_count ?? 0,
+                    category: p.category,
+                    condition: p.condition
                 )
             }
             await MainActor.run {
                 let current = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard current == query else { return }
+                guard current == query, selectedCategory == categorySnapshot else { return }
                 results = fetched
                 isSearching = false
             }
         } catch {
             await MainActor.run {
                 let current = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard current == query else { return }
+                guard current == query, selectedCategory == categorySnapshot else { return }
                 isSearching = false
                 NotificationCenter.default.post(
                     name: .showToast,

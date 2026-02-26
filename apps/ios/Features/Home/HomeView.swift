@@ -11,6 +11,8 @@ struct Product: Identifiable {
     let thumbnailUrl: String?
     let createdAt: String
     let chatCount: Int
+    let category: String?
+    let condition: String?
 }
 
 // MARK: - Components

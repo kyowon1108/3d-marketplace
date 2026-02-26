@@ -202,7 +202,9 @@ struct ProfileView: View {
                         likes: p.likes_count ?? 0,
                         thumbnailUrl: p.thumbnail_url,
                         createdAt: p.created_at,
-                        chatCount: p.chat_count ?? 0
+                        chatCount: p.chat_count ?? 0,
+                        category: p.category,
+                        condition: p.condition
                     )
                 }
                 await MainActor.run {
@@ -235,7 +237,9 @@ struct ProfileView: View {
                         likes: p.likes_count ?? 0,
                         thumbnailUrl: p.thumbnail_url,
                         createdAt: p.created_at,
-                        chatCount: p.chat_count ?? 0
+                        chatCount: p.chat_count ?? 0,
+                        category: p.category,
+                        condition: p.condition
                     )
                 }
                 await MainActor.run {
@@ -387,7 +391,9 @@ struct PurchaseHistoryView: View {
                         likes: pr.likes_count ?? 0,
                         thumbnailUrl: pr.thumbnail_url,
                         createdAt: pr.created_at,
-                        chatCount: pr.chat_count ?? 0
+                        chatCount: pr.chat_count ?? 0,
+                        category: pr.category,
+                        condition: pr.condition
                     )
                 }()
                 return PurchaseItem(

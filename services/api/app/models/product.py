@@ -12,6 +12,7 @@ class Product(Base):
     __table_args__ = (
         Index("ix_products_published_at", "published_at"),
         Index("ix_products_seller_id", "seller_id"),
+        Index("ix_products_category_published_at", "category", "published_at"),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
@@ -25,6 +26,9 @@ class Product(Base):
     published_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    category: Mapped[str | None] = mapped_column(String(30), nullable=True)
+    condition: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    dims_comparison: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, server_default="FOR_SALE", default="FOR_SALE"
     )

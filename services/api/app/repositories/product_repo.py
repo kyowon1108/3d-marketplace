@@ -22,6 +22,9 @@ class ProductRepo:
         price_cents: int,
         seller_id: uuid.UUID,
         description: str | None = None,
+        category: str | None = None,
+        condition: str | None = None,
+        dims_comparison: str | None = None,
     ) -> Product:
         product = Product(
             asset_id=asset_id,
@@ -30,6 +33,9 @@ class ProductRepo:
             price_cents=price_cents,
             seller_id=seller_id,
             published_at=datetime.now(UTC),
+            category=category,
+            condition=condition,
+            dims_comparison=dims_comparison,
         )
         self.db.add(product)
         self.db.flush()
@@ -53,6 +59,7 @@ class ProductRepo:
         limit: int = 20,
         seller_id: uuid.UUID | None = None,
         liked_by_user_id: uuid.UUID | None = None,
+        category: str | None = None,
     ) -> tuple[list[Product], int]:
         stmt = (
             select(Product)
@@ -73,6 +80,10 @@ class ProductRepo:
         if seller_id is not None:
             stmt = stmt.where(Product.seller_id == seller_id)
             count_stmt = count_stmt.where(Product.seller_id == seller_id)
+
+        if category is not None:
+            stmt = stmt.where(Product.category == category)
+            count_stmt = count_stmt.where(Product.category == category)
 
         if liked_by_user_id is not None:
             liked_subq = (

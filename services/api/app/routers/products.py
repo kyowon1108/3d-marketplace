@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.middleware.auth import get_current_user, get_optional_user
 from app.middleware.idempotency import IdempotencyChecker
-from app.models.enums import ImageType, ProductStatus
+from app.models.enums import ImageType, ProductCategory, ProductStatus
 from app.models.product import Product
 from app.models.purchase import Purchase
 from app.models.user import User
@@ -94,6 +94,9 @@ def _build_product_response(
         seller_name=seller_name,
         seller_avatar_url=seller_avatar_url,
         thumbnail_url=thumbnail_url,
+        category=product.category,
+        condition=product.condition,
+        dims_comparison=product.dims_comparison,
         status=product.status,
         likes_count=product.likes_count,
         views_count=product.views_count,
@@ -136,6 +139,9 @@ def publish_product(
         title=body.title,
         description=body.description,
         price_cents=body.price_cents,
+        category=body.category,
+        condition=body.condition,
+        dims_comparison=body.dims_comparison,
     )
 
     result_json = result.model_dump_json()
@@ -160,9 +166,19 @@ def list_products(
     limit: int = 20,
     seller_id: uuid.UUID | None = None,
     liked: bool | None = None,
+    category: str | None = None,
     user: User | None = Depends(get_optional_user),
     db: Session = Depends(get_db),
 ) -> ProductListResponse:
+    # Validate category if provided
+    if category is not None:
+        valid_cats = {e.value for e in ProductCategory}
+        if category not in valid_cats:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Invalid category. Must be one of: {', '.join(sorted(valid_cats))}",
+            )
+
     # liked=true requires authentication
     liked_by_user_id: uuid.UUID | None = None
     if liked:
@@ -175,6 +191,7 @@ def list_products(
         q=q, page=page, limit=limit,
         seller_id=seller_id,
         liked_by_user_id=liked_by_user_id,
+        category=category,
     )
 
     # Batch check liked IDs

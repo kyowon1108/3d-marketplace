@@ -150,6 +150,11 @@ paths:
           description: "If true, return only products liked by the authenticated user (requires auth)"
           schema:
             type: boolean
+        - name: category
+          in: query
+          description: Filter products by category
+          schema:
+            $ref: "#/components/schemas/ProductCategory"
       responses:
         "200":
           description: Product list
@@ -1237,6 +1242,28 @@ components:
           type: string
         suggested_description:
           type: string
+        suggested_category:
+          $ref: "#/components/schemas/ProductCategory"
+          nullable: true
+        suggested_condition:
+          $ref: "#/components/schemas/ProductCondition"
+          nullable: true
+        suggested_price_min:
+          type: integer
+          nullable: true
+          description: Minimum suggested price in KRW
+        suggested_price_max:
+          type: integer
+          nullable: true
+          description: Maximum suggested price in KRW
+        dims_comparison:
+          type: string
+          nullable: true
+          description: Dimension comparison text (e.g. "일반 노트북보다 약간 큰 크기입니다")
+        suggested_price_reason:
+          type: string
+          nullable: true
+          description: AI reasoning for price suggestion (not stored in DB)
       required:
         - suggested_title
         - suggested_description
@@ -1282,6 +1309,15 @@ components:
           type: string
         price_cents:
           type: integer
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+          nullable: true
+        condition:
+          $ref: "#/components/schemas/ProductCondition"
+          nullable: true
+        dims_comparison:
+          type: string
+          nullable: true
       required:
         - asset_id
         - title
@@ -1290,6 +1326,14 @@ components:
     ProductStatus:
       type: string
       enum: [FOR_SALE, RESERVED, SOLD_OUT]
+
+    ProductCategory:
+      type: string
+      enum: [ELECTRONICS, FURNITURE, CLOTHING, BOOKS_MEDIA, SPORTS, LIVING, BEAUTY, HOBBY, OTHER]
+
+    ProductCondition:
+      type: string
+      enum: [NEW, LIKE_NEW, USED, WORN]
 
     ProductResponse:
       type: object
@@ -1324,6 +1368,15 @@ components:
           type: string
           nullable: true
         thumbnail_url:
+          type: string
+          nullable: true
+        category:
+          $ref: "#/components/schemas/ProductCategory"
+          nullable: true
+        condition:
+          $ref: "#/components/schemas/ProductCondition"
+          nullable: true
+        dims_comparison:
           type: string
           nullable: true
         status:

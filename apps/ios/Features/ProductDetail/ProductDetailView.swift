@@ -424,10 +424,30 @@ struct ProductDetailView: View {
                     }
                 }
 
-                // Category and Time
-                Text(relativeTime(from: product.created_at))
-                    .font(.system(size: 13))
-                    .foregroundColor(Theme.Colors.textSecondary)
+                // Category, Condition badges & Time — wraps on small screens
+                WrappingHStack(spacing: 6) {
+                    if let catStr = product.category, let cat = ProductCategory(rawValue: catStr) {
+                        Text(cat.label)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Theme.Colors.violetAccent)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Theme.Colors.violetAccent.opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+                    if let condStr = product.condition, let cond = ProductCondition(rawValue: condStr) {
+                        Text(cond.label)
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Theme.Colors.bgSecondary)
+                            .clipShape(Capsule())
+                    }
+                    Text(relativeTime(from: product.created_at))
+                        .font(.system(size: 13))
+                        .foregroundColor(Theme.Colors.textSecondary)
+                }
 
                 // Description
                 if let description = product.description, !description.isEmpty {
@@ -437,7 +457,24 @@ struct ProductDetailView: View {
                         .lineSpacing(6)
                         .padding(.top, Theme.Spacing.sm)
                 }
-                
+
+                // Dims comparison (AI-generated)
+                if let dimsComp = product.dims_comparison, !dimsComp.isEmpty {
+                    HStack(spacing: 6) {
+                        Image(systemName: "arrow.left.and.right")
+                            .font(.system(size: 12))
+                            .foregroundColor(Theme.Colors.violetAccent)
+                        Text(dimsComp)
+                            .font(.system(size: 14))
+                            .foregroundColor(Theme.Colors.textSecondary)
+                    }
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Theme.Colors.bgSecondary)
+                    .cornerRadius(8)
+                    .padding(.top, Theme.Spacing.xs)
+                }
+
                 // Status / Chat Count metrics
                 HStack(spacing: 8) {
                     if product.status == "RESERVED" {
@@ -1192,6 +1229,9 @@ struct ProductDetailView: View {
             seller_joined_at: product.seller_joined_at,
             seller_trade_count: product.seller_trade_count,
             thumbnail_url: product.thumbnail_url,
+            category: product.category,
+            condition: product.condition,
+            dims_comparison: product.dims_comparison,
             status: "SOLD_OUT",
             chat_count: product.chat_count,
             likes_count: likesCount,
@@ -1239,6 +1279,48 @@ private struct Inline3DPreview: View {
                 print("Failed to load scene: \(error)")
                 #endif
             }
+        }
+    }
+}
+
+// MARK: - Wrapping HStack (flow layout for badges)
+private struct WrappingHStack: Layout {
+    var spacing: CGFloat = 6
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let maxWidth = proposal.width ?? .infinity
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth, x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return CGSize(width: maxWidth, height: y + rowHeight)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x: CGFloat = bounds.minX
+        var y: CGFloat = bounds.minY
+        var rowHeight: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > bounds.maxX, x > bounds.minX {
+                x = bounds.minX
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            subview.place(at: CGPoint(x: x, y: y), proposal: .unspecified)
+            x += size.width + spacing
+            rowHeight = max(rowHeight, size.height)
         }
     }
 }

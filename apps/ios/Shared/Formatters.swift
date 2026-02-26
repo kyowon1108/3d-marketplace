@@ -2,6 +2,15 @@ import Foundation
 
 // MARK: - Price Formatting
 
+/// Format integer with comma separator → "15,000"
+func formatNumberWithComma(_ value: Int) -> String {
+    let f = NumberFormatter()
+    f.numberStyle = .decimal
+    f.groupingSeparator = ","
+    f.maximumFractionDigits = 0
+    return f.string(from: NSNumber(value: value)) ?? "\(value)"
+}
+
 /// Format price_cents (원 단위 정수) → "15,000원"
 func formatPrice(_ cents: Int) -> String {
     let krwFormatter = NumberFormatter()

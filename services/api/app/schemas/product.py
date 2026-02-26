@@ -1,7 +1,12 @@
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
+
+from app.models.enums import ProductCategory, ProductCondition
+
+_VALID_CATEGORIES = {e.value for e in ProductCategory}
+_VALID_CONDITIONS = {e.value for e in ProductCondition}
 
 
 class PublishRequest(BaseModel):
@@ -9,6 +14,25 @@ class PublishRequest(BaseModel):
     title: str
     description: str | None = None
     price_cents: int
+    category: str | None = None
+    condition: str | None = None
+    dims_comparison: str | None = None
+
+    @field_validator("category")
+    @classmethod
+    def validate_category(cls, v: str | None) -> str | None:
+        if v is not None and v not in _VALID_CATEGORIES:
+            allowed = ", ".join(sorted(_VALID_CATEGORIES))
+            raise ValueError(f"Invalid category. Must be one of: {allowed}")
+        return v
+
+    @field_validator("condition")
+    @classmethod
+    def validate_condition(cls, v: str | None) -> str | None:
+        if v is not None and v not in _VALID_CONDITIONS:
+            allowed = ", ".join(sorted(_VALID_CONDITIONS))
+            raise ValueError(f"Invalid condition. Must be one of: {allowed}")
+        return v
 
 
 class ProductUpdateRequest(BaseModel):
@@ -33,6 +57,9 @@ class ProductResponse(BaseModel):
     seller_name: str = ""
     seller_avatar_url: str | None = None
     thumbnail_url: str | None = None
+    category: str | None = None
+    condition: str | None = None
+    dims_comparison: str | None = None
     status: str = "FOR_SALE"
     likes_count: int = 0
     views_count: int = 0

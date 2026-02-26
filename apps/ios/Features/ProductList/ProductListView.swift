@@ -2,10 +2,11 @@ import SwiftUI
 
 struct ProductListView: View {
     @State private var searchText = ""
-    @State private var selectedCategory = "최신순"
+    @State private var selectedSort = "최신순"
     @State private var hideCompleted = false
-    let categories = ["최신순", "인기순", "무료"]
-    
+    @State private var selectedCategory: ProductCategory? = nil
+    let sortOptions = ["최신순", "인기순", "무료"]
+
     @State private var products: [Product] = []
     @State private var isLoading = true
     
@@ -19,7 +20,7 @@ struct ProductListView: View {
             }
         }
         let filteredByStatus = hideCompleted ? searched.filter { $0.status == "FOR_SALE" } : searched
-        return applyCategoryFilter(to: filteredByStatus)
+        return applySortFilter(to: filteredByStatus)
     }
     
     var body: some View {
@@ -28,9 +29,43 @@ struct ProductListView: View {
                 Theme.Colors.bgPrimary.ignoresSafeArea()
                 
                 VStack(spacing: 0) {
-                    CategoryPills(categories: categories, selectedCategory: $selectedCategory)
+                    CategoryPills(categories: sortOptions, selectedCategory: $selectedSort)
                         .padding(.top, Theme.Spacing.xs)
-                    
+
+                    // Category filter chips (server-side)
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            Button(action: {
+                                selectedCategory = nil
+                                Task { await fetchData() }
+                            }) {
+                                Text("전체")
+                                    .font(.caption.weight(.medium))
+                                    .foregroundColor(selectedCategory == nil ? .white : Theme.Colors.textSecondary)
+                                    .padding(.horizontal, 12)
+                                    .padding(.vertical, 6)
+                                    .background(selectedCategory == nil ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                                    .clipShape(Capsule())
+                            }
+                            ForEach(ProductCategory.allCases, id: \.self) { cat in
+                                Button(action: {
+                                    selectedCategory = selectedCategory == cat ? nil : cat
+                                    Task { await fetchData() }
+                                }) {
+                                    Text(cat.label)
+                                        .font(.caption.weight(.medium))
+                                        .foregroundColor(selectedCategory == cat ? .white : Theme.Colors.textSecondary)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 6)
+                                        .background(selectedCategory == cat ? Theme.Colors.violetAccent : Theme.Colors.bgSecondary)
+                                        .clipShape(Capsule())
+                                }
+                            }
+                        }
+                        .padding(.horizontal, Theme.Spacing.md)
+                    }
+                    .padding(.top, Theme.Spacing.xs)
+
                     HStack {
                         Toggle("판매중인 상품만 보기", isOn: $hideCompleted)
                             .toggleStyle(SwitchToggleStyle(tint: Theme.Colors.violetAccent))
@@ -116,7 +151,9 @@ struct ProductListView: View {
                     likes: product.likes,
                     thumbnailUrl: product.thumbnailUrl,
                     createdAt: product.createdAt,
-                    chatCount: product.chatCount
+                    chatCount: product.chatCount,
+                    category: product.category,
+                    condition: product.condition
                 )
             }
         }
@@ -125,7 +162,11 @@ struct ProductListView: View {
     private func fetchData() async {
         isLoading = true
         do {
-            let response: ProductListResponse = try await APIClient.shared.request(endpoint: "/products", needsAuth: false)
+            var endpoint = "/products"
+            if let cat = selectedCategory {
+                endpoint += "?category=\(cat.rawValue)"
+            }
+            let response: ProductListResponse = try await APIClient.shared.request(endpoint: endpoint, needsAuth: false)
             let fetchedProducts = response.products.map { p in
                 Product(
                     id: UUID(uuidString: p.id) ?? UUID(),
@@ -136,7 +177,9 @@ struct ProductListView: View {
                     likes: p.likes_count ?? 0,
                     thumbnailUrl: p.thumbnail_url,
                     createdAt: p.created_at,
-                    chatCount: p.chat_count ?? 0
+                    chatCount: p.chat_count ?? 0,
+                    category: p.category,
+                    condition: p.condition
                 )
             }
             await MainActor.run {
@@ -154,8 +197,8 @@ struct ProductListView: View {
         }
     }
 
-    private func applyCategoryFilter(to source: [Product]) -> [Product] {
-        switch selectedCategory {
+    private func applySortFilter(to source: [Product]) -> [Product] {
+        switch selectedSort {
         case "인기순":
             return source.sorted { lhs, rhs in
                 if lhs.likes == rhs.likes {
