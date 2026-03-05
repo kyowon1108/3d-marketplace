@@ -468,7 +468,7 @@ struct ProductDetailView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.green)
+                            .background(Theme.Colors.statusActive)
                             .cornerRadius(4)
                     } else if product.status == "SOLD_OUT" {
                         Text("판매완료")
@@ -476,7 +476,7 @@ struct ProductDetailView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.gray)
+                            .background(Theme.Colors.statusSold)
                             .cornerRadius(4)
                     }
 
@@ -584,24 +584,48 @@ struct ProductDetailView: View {
 
                 Spacer()
 
-                // Buyer CTA
+                // Buyer Dual CTA
                 if let product = productDetail, authManager.isAuthenticated, authManager.currentUser?.id != product.seller_id {
                     let isSoldOut = product.status == "SOLD_OUT"
-                    Button(action: createChatRoom) {
-                        HStack(spacing: 6) {
-                            if isCreatingChat {
-                                ProgressView().tint(.white).scaleEffect(0.8)
+                    HStack(spacing: 8) {
+                        // Secondary: Chat
+                        Button(action: createChatRoom) {
+                            HStack(spacing: 6) {
+                                if isCreatingChat {
+                                    ProgressView().tint(Theme.Colors.textPrimary).scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "bubble.right")
+                                        .font(.system(size: 14, weight: .semibold))
+                                }
+                                Text(isCreatingChat ? "..." : "채팅하기")
                             }
-                            Text(isSoldOut ? "판매 완료" : (isCreatingChat ? "..." : "채팅하기"))
+                            .font(.subheadline.weight(.bold))
+                            .foregroundColor(isSoldOut ? Theme.Colors.textMuted : Theme.Colors.textPrimary)
+                            .frame(height: 44)
+                            .frame(minWidth: 90)
+                            .padding(.horizontal, 14)
+                            .background(Theme.Colors.bgSecondary)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(isSoldOut ? Theme.Colors.textMuted.opacity(0.3) : Theme.Colors.glassBorder, lineWidth: 1)
+                            )
                         }
-                        .font(.subheadline.weight(.bold))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(isSoldOut ? Color.gray : Theme.Colors.violetAccent)
-                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                        .disabled(isCreatingChat || isSoldOut)
+
+                        // Primary: Purchase
+                        Button(action: { showPurchaseConfirmation = true }) {
+                            Text(isSoldOut ? "판매완료" : "구매하기")
+                                .font(.subheadline.weight(.bold))
+                                .foregroundColor(.white)
+                                .frame(height: 44)
+                                .frame(minWidth: 90)
+                                .padding(.horizontal, 14)
+                                .background(isSoldOut ? Theme.Colors.statusSold : Theme.Colors.brandSafe)
+                                .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                        .disabled(isPurchasing || isSoldOut)
                     }
-                    .disabled(isCreatingChat || isSoldOut)
                 } else if authManager.isAuthenticated {
                     Text("내가 등록한\n상품입니다")
                         .font(.caption.weight(.medium))

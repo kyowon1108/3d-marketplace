@@ -255,7 +255,8 @@ struct SearchView: View {
                     createdAt: p.created_at,
                     chatCount: p.chat_count ?? 0,
                     category: p.category,
-                    condition: p.condition
+                    condition: p.condition,
+                    hasArModel: p.asset_id != nil
                 )
             }
             await MainActor.run {

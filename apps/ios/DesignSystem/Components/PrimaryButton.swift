@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Violet glowing primary CTA button corresponding to Codyssey style.
+/// Safe-green primary CTA button for marketplace purchase/action flows.
 public struct PrimaryButton: View {
     let title: String
     let icon: String?
@@ -42,15 +42,14 @@ public struct PrimaryButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, Theme.Spacing.md)
             .background(
-                isDisabled ? Theme.Colors.bgSecondary : Theme.Colors.violetAccent
+                isDisabled ? Theme.Colors.bgSecondary : Theme.Colors.brandSafe
             )
             .foregroundColor(
                 isDisabled ? Theme.Colors.textMuted : Theme.Colors.textPrimary
             )
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.lg))
-            // Apply Neon Glow conditionally
             .shadow(
-                color: (showGlow && !isDisabled) ? Theme.Colors.neonGlow : .clear,
+                color: (showGlow && !isDisabled) ? Theme.Colors.brandSafe.opacity(0.35) : .clear,
                 radius: 15,
                 x: 0,
                 y: 8

@@ -156,7 +156,8 @@ struct ProductListView: View {
                     createdAt: product.createdAt,
                     chatCount: product.chatCount,
                     category: product.category,
-                    condition: product.condition
+                    condition: product.condition,
+                    hasArModel: product.hasArModel
                 )
             }
         }
@@ -182,7 +183,8 @@ struct ProductListView: View {
                     createdAt: p.created_at,
                     chatCount: p.chat_count ?? 0,
                     category: p.category,
-                    condition: p.condition
+                    condition: p.condition,
+                    hasArModel: p.asset_id != nil
                 )
             }
             await MainActor.run {

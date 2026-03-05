@@ -23,7 +23,17 @@ public enum Theme {
         public static let textSecondary = Color(hex: "#a1a1aa") // Zinc-400
         public static let textMuted = Color(hex: "#52525b") // Zinc-600
         
-        // System
+        // Brand — Safe/Trust (dark theme mapping)
+        public static let brandSafe = Color(hex: "#3FA86C")   // 안전/구매 CTA
+        public static let brandTrust = Color(hex: "#5C8EFF")  // 링크/신뢰 안내
+
+        // Status badges
+        public static let statusActive = Color(hex: "#49BA80") // 예약중
+        public static let statusSold   = Color(hex: "#9CA2AB") // 판매완료
+        public static let statusWarn   = Color(hex: "#F2A84A") // 주의
+        public static let statusError  = Color(hex: "#F06B6B") // 오류
+
+        // System (legacy — prefer semantic tokens above)
         public static let success = Color.green
         public static let error = Color.red
     }

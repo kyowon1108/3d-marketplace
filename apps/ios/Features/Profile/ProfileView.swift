@@ -46,25 +46,16 @@ struct ProfileView: View {
                     .padding(.vertical, 8)
                     .listRowBackground(Theme.Colors.bgSecondary)
 
-                    // Stats quick row
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text("판매상품")
-                                .font(.system(size: 13))
-                                .foregroundColor(Theme.Colors.textSecondary)
-                            Text("\(productCount)개")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(Theme.Colors.textPrimary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text("안읽은 채팅")
-                                .font(.system(size: 13))
-                                .foregroundColor(Theme.Colors.textSecondary)
-                            Text("\(unreadMessages)개")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundColor(Theme.Colors.textPrimary)
-                        }
+                    // Stats trust row
+                    HStack(spacing: 0) {
+                        ProfileStatCell(label: "판매상품", value: "\(productCount)개")
+                        Divider().frame(height: 32).background(Theme.Colors.glassBorder)
+                        ProfileStatCell(label: "안읽은 채팅", value: "\(unreadMessages)개")
+                        Divider().frame(height: 32).background(Theme.Colors.glassBorder)
+                        ProfileStatCell(
+                            label: "가입일",
+                            value: authManager.currentUser.flatMap { shortDate(from: $0.created_at ?? "") } ?? "-"
+                        )
                     }
                     .padding(.vertical, 8)
                     .listRowBackground(Theme.Colors.bgSecondary)
@@ -132,6 +123,21 @@ struct ProfileView: View {
                                 .frame(width: 24)
                             Text("설정")
                                 .foregroundColor(Theme.Colors.textPrimary)
+                        }
+                    }
+                    .listRowBackground(Theme.Colors.bgSecondary)
+
+                    Link(destination: URL(string: "https://www.kca.go.kr")!) {
+                        HStack(spacing: Theme.Spacing.md) {
+                            Image(systemName: "person.badge.shield.checkmark")
+                                .foregroundColor(Theme.Colors.brandTrust)
+                                .frame(width: 24)
+                            Text("고객센터 / 분쟁 도움")
+                                .foregroundColor(Theme.Colors.textPrimary)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundColor(Theme.Colors.textMuted)
                         }
                     }
                     .listRowBackground(Theme.Colors.bgSecondary)
@@ -204,7 +210,8 @@ struct ProfileView: View {
                         createdAt: p.created_at,
                         chatCount: p.chat_count ?? 0,
                         category: p.category,
-                        condition: p.condition
+                        condition: p.condition,
+                        hasArModel: p.asset_id != nil
                     )
                 }
                 await MainActor.run {
@@ -239,7 +246,8 @@ struct ProfileView: View {
                         createdAt: p.created_at,
                         chatCount: p.chat_count ?? 0,
                         category: p.category,
-                        condition: p.condition
+                        condition: p.condition,
+                        hasArModel: p.asset_id != nil
                     )
                 }
                 await MainActor.run {
@@ -393,7 +401,8 @@ struct PurchaseHistoryView: View {
                         createdAt: pr.created_at,
                         chatCount: pr.chat_count ?? 0,
                         category: pr.category,
-                        condition: pr.condition
+                        condition: pr.condition,
+                        hasArModel: pr.asset_id != nil
                     )
                 }()
                 return PurchaseItem(
@@ -418,4 +427,34 @@ struct PurchaseHistoryView: View {
             }
         }
     }
+}
+
+// MARK: - Helpers
+
+private struct ProfileStatCell: View {
+    let label: String
+    let value: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 16, weight: .bold))
+                .foregroundColor(Theme.Colors.textPrimary)
+            Text(label)
+                .font(.system(size: 12))
+                .foregroundColor(Theme.Colors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private func shortDate(from isoString: String) -> String? {
+    let formatter = ISO8601DateFormatter()
+    formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+    guard let date = formatter.date(from: isoString) else {
+        formatter.formatOptions = [.withInternetDateTime]
+        guard let d = formatter.date(from: isoString) else { return nil }
+        return Calendar.current.component(.year, from: d).description + "년"
+    }
+    return Calendar.current.component(.year, from: date).description + "년"
 }

@@ -13,6 +13,7 @@ struct Product: Identifiable {
     let chatCount: Int
     let category: String?
     let condition: String?
+    var hasArModel: Bool = false
 }
 
 // MARK: - Components
@@ -54,15 +55,21 @@ struct ProductListRow: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
 
-                // 3D Badge
-                Text("3D")
-                    .font(.caption2.weight(.bold))
-                    .foregroundColor(Theme.Colors.textPrimary)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color.black.opacity(0.6))
-                    .clipShape(Capsule())
-                    .padding(6)
+                // AR/3D Badge
+                HStack(spacing: 3) {
+                    if product.hasArModel {
+                        Image(systemName: "arkit")
+                            .font(.system(size: 9, weight: .bold))
+                    }
+                    Text("3D")
+                        .font(.caption2.weight(.bold))
+                }
+                .foregroundColor(.white)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 3)
+                .background(product.hasArModel ? Theme.Colors.brandSafe.opacity(0.85) : Color.black.opacity(0.6))
+                .clipShape(Capsule())
+                .padding(6)
             }
             .frame(width: 110, height: 110)
             .clipShape(RoundedRectangle(cornerRadius: Theme.Radius.md))
@@ -96,7 +103,7 @@ struct ProductListRow: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.gray)
+                            .background(Theme.Colors.statusSold)
                             .clipShape(Capsule())
                     } else if product.status == "RESERVED" {
                         Text("예약중")
@@ -104,7 +111,7 @@ struct ProductListRow: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.green.opacity(0.9))
+                            .background(Theme.Colors.statusActive)
                             .clipShape(Capsule())
                     }
                 }

@@ -69,15 +69,51 @@ struct ChatRoomView: View {
                     ScrollView {
                         ScrollViewReader { proxy in
                             LazyVStack(spacing: Theme.Spacing.md) {
-                                // System Safety Warning
-                                Text("직거래를 권장하며, 외부 채널 유도나 선입금 요구에 주의하세요.")
-                                    .font(.caption)
-                                    .foregroundColor(Theme.Colors.textSecondary)
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 8)
-                                    .background(Theme.Colors.bgSecondary)
-                                    .clipShape(Capsule())
-                                    .padding(.top, Theme.Spacing.md)
+                                // Safety Warning Card
+                                VStack(alignment: .leading, spacing: Theme.Spacing.xs) {
+                                    HStack(spacing: 6) {
+                                        Image(systemName: "exclamationmark.shield.fill")
+                                            .font(.system(size: 13, weight: .semibold))
+                                            .foregroundColor(Theme.Colors.statusWarn)
+                                        Text("안전 거래 안내")
+                                            .font(.caption.weight(.semibold))
+                                            .foregroundColor(Theme.Colors.statusWarn)
+                                    }
+                                    Text("외부 채널 유도·선입금 요구는 사기 위험이 있습니다. 직거래를 권장해요.")
+                                        .font(.caption)
+                                        .foregroundColor(Theme.Colors.textSecondary)
+                                        .lineSpacing(3)
+                                    HStack(spacing: Theme.Spacing.md) {
+                                        Link(destination: URL(string: "https://ecrm.police.go.kr/minwon/main")!) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "shield.lefthalf.filled")
+                                                    .font(.system(size: 11))
+                                                Text("사기조회")
+                                                    .font(.caption.weight(.medium))
+                                            }
+                                            .foregroundColor(Theme.Colors.brandTrust)
+                                        }
+                                        Link(destination: URL(string: "https://kcc.go.kr")!) {
+                                            HStack(spacing: 4) {
+                                                Image(systemName: "flag.fill")
+                                                    .font(.system(size: 11))
+                                                Text("신고")
+                                                    .font(.caption.weight(.medium))
+                                            }
+                                            .foregroundColor(Theme.Colors.statusError)
+                                        }
+                                    }
+                                    .padding(.top, 2)
+                                }
+                                .padding(Theme.Spacing.md)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Theme.Colors.bgSecondary)
+                                .cornerRadius(Theme.Radius.md)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: Theme.Radius.md)
+                                        .stroke(Theme.Colors.statusWarn.opacity(0.4), lineWidth: 1)
+                                )
+                                .padding(.top, Theme.Spacing.md)
                                     
                                 ForEach(messages) { msg in
                                     MessageBubble(message: msg)
