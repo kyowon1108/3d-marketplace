@@ -1,5 +1,6 @@
 import SwiftUI
 import Foundation
+import GoogleSignIn
 
 @main
 struct MarketplaceApp: App {
@@ -10,6 +11,9 @@ struct MarketplaceApp: App {
             ContentView()
                 .preferredColorScheme(.dark)
                 .toastView(toast: $toast)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
+                }
                 .onReceive(NotificationCenter.default.publisher(for: .showToast)) { notification in
                     if let newToast = notification.object as? Toast {
                         self.toast = newToast

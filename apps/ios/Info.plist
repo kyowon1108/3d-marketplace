@@ -39,5 +39,20 @@
 	</array>
 	<key>UILaunchScreen</key>
 	<dict/>
+
+	<!-- Google Sign-In -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.285519150019-uovj43fvfdmgien4nn6cs0agqq65invc</string>
+			</array>
+		</dict>
+	</array>
+	<key>GIDClientID</key>
+	<string>285519150019-uovj43fvfdmgien4nn6cs0agqq65invc.apps.googleusercontent.com</string>
 </dict>
 </plist>

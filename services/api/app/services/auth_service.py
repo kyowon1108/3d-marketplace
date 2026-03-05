@@ -64,7 +64,7 @@ class AuthService:
         providers: list[str] = []
         if settings.dev_auth_enabled:
             providers.append("dev")
-        if settings.google_client_id:
+        if settings.google_client_id or settings.google_ios_client_id:
             providers.append("google")
         return AuthProvidersResponse(providers=providers)
 

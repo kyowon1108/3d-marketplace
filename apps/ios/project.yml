@@ -3,17 +3,25 @@ options:
   bundleIdPrefix: com.marketplace
   deploymentTarget:
     iOS: "17.0"
-  xcodeVersion: "16.0"
+  xcodeVersion: "26.2"
   generateEmptyDirectories: true
 
 settings:
   base:
     SWIFT_VERSION: "6.0"
 
+packages:
+  GoogleSignIn:
+    url: https://github.com/google/GoogleSignIn-iOS
+    from: 8.0.0
+
 targets:
   Marketplace:
     type: application
     platform: iOS
+    dependencies:
+      - package: GoogleSignIn
+        product: GoogleSignIn
     sources:
       - path: App
       - path: DesignSystem

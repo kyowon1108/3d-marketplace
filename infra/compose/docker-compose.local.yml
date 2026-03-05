@@ -39,6 +39,9 @@ services:
       STORAGE_BACKEND: local
       STORAGE_LOCAL_PATH: /app/storage
       SERVER_BASE_URL: http://100.95.177.6:8000
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      GOOGLE_IOS_CLIENT_ID: ${GOOGLE_IOS_CLIENT_ID:-}
     depends_on:
       postgres:
         condition: service_healthy

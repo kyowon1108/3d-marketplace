@@ -223,6 +223,10 @@ struct LogoutRequest: Encodable {
 
 struct EmptyResponse: Decodable {}
 
+struct GoogleTokenRequest: Encodable {
+    let id_token: String
+}
+
 struct AuthUserResponse: Decodable {
     let id: String
     let email: String
