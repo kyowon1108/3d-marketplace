@@ -1,8 +1,66 @@
 # 3D Marketplace
 
-iPhone으로 실물 제품을 3D 스캔하고, iOS 로컬 모델링을 거쳐, AR 체험 후 구매할 수 있는 C2C 마켓플레이스 플랫폼.
+> **Scan it. Place it. Buy it.**
+> C2C marketplace where sellers scan physical items with iPhone LiDAR,
+> and buyers preview them in AR before purchasing.
 
-서버는 모델 생성/수정 연산 없이, 순수 ingest/store/publish 역할만 담당한다.
+[![CI](https://github.com/kapr/3d-marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/kapr/3d-marketplace/actions/workflows/ci.yml)
+[![Python 3.12](https://img.shields.io/badge/python-3.12-blue)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.11x-green)](https://fastapi.tiangolo.com/)
+[![SwiftUI](https://img.shields.io/badge/SwiftUI-iOS17-orange)](https://developer.apple.com/xcode/swiftui/)
+
+## Problem
+
+Buying secondhand furniture or large items online is a guessing game — photos lie, dimensions are wrong, and you can't tell if it fits your space. Traditional C2C platforms (Craigslist, Facebook Marketplace) have no answer for this.
+
+## Architecture
+
+```
+iPhone (LiDAR scan, 10-20s)
+  └─ iOS LocalModelBuilder  ← on-device PhotogrammetrySession
+       └─ USDZ / GLB export + auto dims
+            └─ presigned S3 upload  ← SHA256 checksum verified
+                 └─ FastAPI ingest (PostgreSQL)
+                      └─ iOS AR Viewer  ← footprint-first RealityKit placement
+```
+
+Server does **no** 3D modeling. Pure ingest / store / publish.
+
+## Key Features
+
+| Feature | Detail |
+|---|---|
+| LiDAR 3D scan | SweepCaptureEngine → LocalModelBuilder → USDZ/GLB |
+| Auto dimensions | Bounding-box extraction; LiDAR source labeled in AR |
+| AR placement | Footprint-first, plane detection, real-scale dims overlay |
+| AI listing assist | GPT-4o-mini: title / description / category / price range from thumbnail |
+| Upload integrity | SHA256 checksum + size verified server-side before READY |
+| Idempotency | `Idempotency-Key` header on complete + publish; safe retries |
+| Realtime chat | WebSocket `/v1/chats/{roomId}` + REST fallback |
+| OAuth | Google sign-in (iOS id_token exchange) |
+
+## DB Schema Highlights
+
+| Table | Purpose |
+|---|---|
+| `model_assets` | iOS-generated model meta; state machine INITIATED→READY→PUBLISHED |
+| `model_asset_files` | Per-role files (USDZ / GLB / PREVIEW); checksum + size stored |
+| `products` | Listing data; `asset_id` may only reference READY/PUBLISHED assets |
+| `idempotency_keys` | Deduplication for complete + publish operations |
+
+See [`docs/schema.md`](docs/schema.md) for full ERD and constraint reference.
+
+## Progress
+
+| Gate | Area | Status |
+|---|---|---|
+| A | DB schema + migrations | PASS |
+| B | Backend API (28 endpoints) | PASS |
+| C | iOS 11-screen parity | PASS |
+
+---
+
+> Korean documentation below / 한국어 문서
 
 ---
 

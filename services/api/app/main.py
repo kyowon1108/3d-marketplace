@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -5,6 +7,7 @@ from sqlalchemy import text
 
 from app.config import settings
 from app.database import SessionLocal
+from app.middleware.logging import RequestIDMiddleware
 from app.routers import ai, auth, chat, model_assets, products, storage, uploads
 
 
@@ -17,6 +20,12 @@ def _resolve_cors_origins() -> list[str]:
     return []
 
 
+logging.basicConfig(
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    level=logging.INFO,
+)
+
+
 def create_app() -> FastAPI:
     application = FastAPI(
         title="3D Marketplace API",
@@ -24,6 +33,7 @@ def create_app() -> FastAPI:
         docs_url="/docs" if settings.app_env != "production" else None,
     )
 
+    application.add_middleware(RequestIDMiddleware)
     application.add_middleware(
         CORSMiddleware,
         allow_origins=_resolve_cors_origins(),
